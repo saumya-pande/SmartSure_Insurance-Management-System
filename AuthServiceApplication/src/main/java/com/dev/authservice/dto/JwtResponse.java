@@ -1,0 +1,14 @@
+package com.dev.authservice.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class JwtResponse {
+    private String token;
+    private String refreshToken;
+    private String role;
+}
