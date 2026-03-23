@@ -17,19 +17,20 @@ public class JwtUtil {
     private final Key key;
     private final int jwtExpirationMs;
 
-    public JwtUtil(@Value("${jwt.secret}") String secret, 
-                   @Value("${jwt.expirationMs}") int jwtExpirationMs) {
+    public JwtUtil(@Value("${jwt.secret}") String secret,
+            @Value("${jwt.expirationMs}") int jwtExpirationMs) {
         // Ensure secret is at least 256 bits (32 bytes)
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
         this.jwtExpirationMs = jwtExpirationMs;
     }
 
-    public String generateToken(String email, String role) {
+    public String generateToken(String email, String role, Long id) {
     	
     	//building the token
         return Jwts.builder()
                 .setSubject(email)  //setting subject
                 .claim("role", role)  // Add the role claim to the JWT
+                .claim("userId", id) // Embed the actual database ID into the token
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs)) //expiration time 
                 .signWith(key, SignatureAlgorithm.HS256)

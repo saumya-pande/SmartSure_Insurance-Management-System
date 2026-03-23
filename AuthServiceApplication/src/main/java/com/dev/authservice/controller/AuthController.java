@@ -20,6 +20,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.dev.authservice.config.RabbitMQConfig;
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -36,6 +41,9 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         Optional<User> userOpt = userRepository.findByEmail(loginRequest.getEmail());
@@ -44,7 +52,7 @@ public class AuthController {
             User user = userOpt.get();
             String roleStr = "ROLE_" + user.getRole().name();
             
-            String token = jwtUtil.generateToken(user.getEmail(), roleStr);
+            String token = jwtUtil.generateToken(user.getEmail(), roleStr, user.getId());
             String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
             
             return ResponseEntity.ok(new JwtResponse(token, refreshToken, roleStr));
@@ -59,7 +67,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
-        // Default role handled in Entity, but we allow specifying it here for the example
+        // Default role 
         Role role = Role.CUSTOMER;
         if (signUpRequest.getRole() != null && signUpRequest.getRole().equalsIgnoreCase("admin")) {
             role = Role.ADMIN;
@@ -68,11 +76,11 @@ public class AuthController {
         User user = User.builder()
                 .name(signUpRequest.getName())
                 .email(signUpRequest.getEmail())
-                .password(encoder.encode(signUpRequest.getPassword()))
                 .phone(signUpRequest.getPhone())
                 .address(signUpRequest.getAddress())
                 .role(role)
                 .build();
+        user.setPassword(encoder.encode(signUpRequest.getPassword()));
 
         userRepository.save(user);
 
@@ -96,9 +104,13 @@ public class AuthController {
             Optional<User> userOpt = userRepository.findByEmail(email);
             
             if (userOpt.isPresent()) {
-                String roleStr = "ROLE_" + userOpt.get().getRole().name();
-                String newToken = jwtUtil.generateToken(email, roleStr);
-                return ResponseEntity.ok(new JwtResponse(newToken, token, roleStr));
+                User user = userOpt.get();
+                String roleStr = "ROLE_" + user.getRole().name();
+                return ResponseEntity.ok(new JwtResponse(
+                        jwtUtil.generateToken(user.getEmail(), roleStr, user.getId()),
+                        token,
+                        roleStr
+                ));
             }
         }
         return ResponseEntity.badRequest().body("Invalid refresh token.");

@@ -37,41 +37,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = request.getHeader("Authorization");
         
-        // Check if the Authorization header contains a Bearer token
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
             
-            // Check if the token is expired
-            if (jwtUtil.isTokenExpired(token)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Invalid or expired token.");
-                return;
-            }
-            
-            // Check if the token has been revoked
-            if (revokedTokenRepository.findById(token).isPresent()) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Token has been revoked.");
-                return;
-            }
-            
-            // Get the username and role from the token
-            String username = jwtUtil.getUsernameFromToken(token);
-            String role = jwtUtil.getRoleFromToken(token);
-
-            Optional<User> user = userRepository.findByEmail(username);
-
-            if (user.isPresent()) {
-            	
-            	// Create an authority using the role directly from the enum
-                List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
+            try {
+                // Check if the token is expired
+                if (jwtUtil.isTokenExpired(token)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Invalid or expired token.");
+                    return;
+                }
                 
-                // Create an Authentication object and set it in the SecurityContext
-                SecurityContextHolder.getContext()
-                        .setAuthentication(new UsernamePasswordAuthenticationToken(username, null, authorities));
+                // Check if the token has been revoked
+                if (revokedTokenRepository.findById(token).isPresent()) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Token has been revoked.");
+                    return;
+                }
                 
-                // Log the authorities for debugging
-				System.out.println("Authorities: " + authorities);
+                // Get the username and role from the token
+                String username = jwtUtil.getUsernameFromToken(token);
+                String role = jwtUtil.getRoleFromToken(token);
+
+                Optional<User> user = userRepository.findByEmail(username);
+
+                if (user.isPresent()) {
+                    // Create an authority using the role directly from the enum
+                    List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
+                    
+                    // Create an Authentication object and set it in the SecurityContext
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(new UsernamePasswordAuthenticationToken(username, null, authorities));
+                    
+                }
+            } catch (Exception ex) {
+                // Ignore malformed token if hitting public endpoints like /api/auth
+                // but we clear the context just to be safe
+                SecurityContextHolder.clearContext();
             }
         }
         

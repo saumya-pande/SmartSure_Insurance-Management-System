@@ -28,21 +28,39 @@ spring:
               uri: lb://auth-service
               predicates:
                 - Path=/api/auth/**
+              # No auth filter — login/register must be public  
+
             - id: policy-service
               uri: lb://policy-service
               predicates:
                 - Path=/api/policies/**
               filters:
                 - Authentication
+                - RoleCheck=ROLE_USER
+              # Any authenticated user (ROLE_USER or ROLE_ADMIN) can access
+
+              #for admin access in policy service
+            - id: policy-admin-service
+              uri: lb://policy-service
+              predicates:
+                - Path=/api/admin/policies/**
+              filters:
+                - Authentication
+                - RoleCheck=ROLE_ADMIN
+
             - id: claims-service
               uri: lb://claims-service
               predicates:
                 - Path=/api/claims/**
               filters:
                 - Authentication
+              # Any authenticated user can access
+      
             - id: admin-service
               uri: lb://admin-service
               predicates:
                 - Path=/api/admin/**
               filters:
                 - Authentication
+                - RoleCheck=ROLE_ADMIN
+              # Gateway blocks non-admins before request even reaches service

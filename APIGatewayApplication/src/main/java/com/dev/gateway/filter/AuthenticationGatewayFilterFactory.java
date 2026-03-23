@@ -12,7 +12,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
-public class AuthenticationGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthenticationGatewayFilterFactory.Config> {
+public class AuthenticationGatewayFilterFactory
+        extends AbstractGatewayFilterFactory<AuthenticationGatewayFilterFactory.Config> {
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -29,7 +30,6 @@ public class AuthenticationGatewayFilterFactory extends AbstractGatewayFilterFac
         return ((exchange, chain) -> {
             ServerHttpRequest request = exchange.getRequest();
 
-            // Skip authentication for auth endpoints
             if (request.getURI().getPath().contains("/api/auth")) {
                 return chain.filter(exchange);
             }
@@ -47,15 +47,22 @@ public class AuthenticationGatewayFilterFactory extends AbstractGatewayFilterFac
 
             try {
                 jwtUtil.validateToken(authHeader);
-                
-                // Extract and append user info to downstream services
+
                 String username = jwtUtil.extractUsername(authHeader);
                 String role = jwtUtil.extractRole(authHeader);
-                
+                Long userId = jwtUtil.extractUserId(authHeader);
+
+                // Strip spoofed headers, then set real values from validated JWT
                 request = exchange.getRequest()
                         .mutate()
+                        .headers(headers -> {
+                            headers.remove("X-LoggedIn-User");
+                            headers.remove("X-User-Role");
+                            headers.remove("X-User-Id");
+                        })
                         .header("X-LoggedIn-User", username)
                         .header("X-User-Role", role)
+                        .header("X-User-Id", String.valueOf(userId))
                         .build();
 
             } catch (Exception e) {
@@ -67,7 +74,8 @@ public class AuthenticationGatewayFilterFactory extends AbstractGatewayFilterFac
         });
     }
 
-    private Mono<Void> onError(org.springframework.web.server.ServerWebExchange exchange, String err, HttpStatus httpStatus) {
+    private Mono<Void> onError(org.springframework.web.server.ServerWebExchange exchange, String err,
+            HttpStatus httpStatus) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(httpStatus);
         return response.setComplete();
