@@ -45,18 +45,18 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding bindingUserRegistered(Queue userRegisteredQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(userRegisteredQueue).to(exchange).with(ROUTING_KEY_REGISTER);
+    public Binding bindingUserRegistered(@org.springframework.beans.factory.annotation.Qualifier("userRegisteredQueue") Queue queue, TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY_REGISTER);
     }
 
     @Bean
-    public Binding bindingPolicyPurchased(Queue policyPurchasedQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(policyPurchasedQueue).to(exchange).with(ROUTING_KEY_PURCHASED);
+    public Binding bindingPolicyPurchased(@org.springframework.beans.factory.annotation.Qualifier("policyPurchasedQueue") Queue queue, TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY_PURCHASED);
     }
 
     @Bean
-    public Binding bindingPolicyTypeCreated(Queue policyTypeCreatedQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(policyTypeCreatedQueue).to(exchange).with(ROUTING_KEY_CREATED);
+    public Binding bindingPolicyTypeCreated(@org.springframework.beans.factory.annotation.Qualifier("policyTypeCreatedQueue") Queue queue, TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY_CREATED);
     }
 
     @Bean

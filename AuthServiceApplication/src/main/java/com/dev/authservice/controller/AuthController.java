@@ -47,14 +47,14 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         Optional<User> userOpt = userRepository.findByEmail(loginRequest.getEmail());
-        
+
         if (userOpt.isPresent() && encoder.matches(loginRequest.getPassword(), userOpt.get().getPassword())) {
             User user = userOpt.get();
             String roleStr = "ROLE_" + user.getRole().name();
-            
+
             String token = jwtUtil.generateToken(user.getEmail(), roleStr, user.getId());
             String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
-            
+
             return ResponseEntity.ok(new JwtResponse(token, refreshToken, roleStr));
         }
 
@@ -67,7 +67,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
-        // Default role 
+        // Default role
         Role role = Role.CUSTOMER;
         if (signUpRequest.getRole() != null && signUpRequest.getRole().equalsIgnoreCase("admin")) {
             role = Role.ADMIN;
@@ -84,6 +84,12 @@ public class AuthController {
 
         userRepository.save(user);
 
+        // Publish event to RabbitMQ
+        Map<String, String> payload = new HashMap<>();
+        payload.put("email", user.getEmail());
+        payload.put("name", user.getName());
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_REGISTER, payload);
+
         return ResponseEntity.ok("User registered successfully!");
     }
 
@@ -91,26 +97,26 @@ public class AuthController {
     public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String tokenHeader) {
         if (StringUtils.hasText(tokenHeader) && tokenHeader.startsWith("Bearer ")) {
             String token = tokenHeader.substring(7);
-            
+
             if (revokedTokenRepository.findById(token).isPresent()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token has been revoked.");
             }
 
             if (jwtUtil.isTokenExpired(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token expired. Please login again.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Refresh token expired. Please login again.");
             }
-            
+
             String email = jwtUtil.getUsernameFromToken(token);
             Optional<User> userOpt = userRepository.findByEmail(email);
-            
+
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
                 String roleStr = "ROLE_" + user.getRole().name();
                 return ResponseEntity.ok(new JwtResponse(
                         jwtUtil.generateToken(user.getEmail(), roleStr, user.getId()),
                         token,
-                        roleStr
-                ));
+                        roleStr));
             }
         }
         return ResponseEntity.badRequest().body("Invalid refresh token.");

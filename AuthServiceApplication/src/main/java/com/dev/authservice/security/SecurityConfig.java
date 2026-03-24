@@ -25,7 +25,8 @@ public class SecurityConfig {
     }
 
     /**
-     * Replaces BCrypt with Argon2id, providing industry-standard memory-hard password hashing.
+     * Replaces BCrypt with Argon2id, providing industry-standard memory-hard
+     * password hashing.
      */
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -35,14 +36,16 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/error").permitAll()
-                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                .requestMatchers("/api/policies/**", "/api/claims/**").hasAnyAuthority("ROLE_CUSTOMER", "ROLE_ADMIN")
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**", "/error", "/v3/api-docs/**", "/swagger-ui/**",
+                                "/swagger-ui.html", "/actuator/**")
+                        .permitAll()
+                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/policies/**", "/api/claims/**")
+                        .hasAnyAuthority("ROLE_CUSTOMER", "ROLE_ADMIN")
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -52,10 +55,12 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://127.0.0.1:5501", "http://localhost:3000", "http://localhost:4200")); // common frontend ports
+        config.setAllowedOrigins(List.of("http://127.0.0.1:5501", "http://localhost:3000", "http://localhost:4200")); // common
+                                                                                                                      // frontend
+                                                                                                                      // ports
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        config.setExposedHeaders(List.of("Authorization")); 
+        config.setExposedHeaders(List.of("Authorization"));
 
         source.registerCorsConfiguration("/**", config);
         return source;

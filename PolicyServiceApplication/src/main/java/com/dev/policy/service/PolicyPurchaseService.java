@@ -115,7 +115,19 @@ public class PolicyPurchaseService {
         createPremium(policy, type.getBasePremium());
 
         policy.setStatus(PolicyStatus.ACTIVE);
-        return policyMapper.toResponse(policyRepository.save(policy));
+        Policy savedPolicy = policyRepository.save(policy);
+
+        // Publish to RabbitMQ
+        java.util.Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("email", email);
+        payload.put("policyId", savedPolicy.getId());
+        payload.put("policyName", type.getName());
+        payload.put("amount", type.getBasePremium());
+        rabbitTemplate.convertAndSend(com.dev.policy.config.RabbitMQConfig.EXCHANGE_NAME, 
+                                      com.dev.policy.config.RabbitMQConfig.ROUTING_KEY_PURCHASED, 
+                                      payload);
+
+        return policyMapper.toResponse(savedPolicy);
     }
 
     private void createPremium(Policy policy, Double amount) {

@@ -2,6 +2,7 @@ package com.dev.authservice.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -29,14 +30,15 @@ public class User {
     @Column(name = "email_address", nullable = false, unique = true) // Unique email for login
     private String email;
     
+    @NotBlank(message = "Password is required")
     @Pattern(
-    	    regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,}$",
-    	    message = "Password must be at least 8 characters and contain: " +
-    	              "one uppercase, one lowercase, one number, one special character (@#$%^&+=!)"
+    	    regexp = "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&+=]).{8,}$",
+    	    message = "Password must be at least 8 characters and contain: one uppercase, one lowercase, one number, one special character"
     	) //follows to standard of password strength for more security
     @Column(name = "password_hash", nullable = false) // Encrypted password
     private String password;
     
+    @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^[0-9]{10}$", message = "Invalid phone number")
     @Column(name = "phone_number") // Optional phone number
     private String phone;

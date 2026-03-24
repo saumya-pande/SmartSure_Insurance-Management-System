@@ -32,7 +32,7 @@ public class NotificationListener {
         Long policyId = Long.valueOf(payload.get("policyId").toString());
         String policyName = (String) payload.get("policyName");
         Double amount = Double.valueOf(payload.get("amount").toString());
-        
+
         log.info("Received Policy Purchased Event for Policy ID: {}", policyId);
         emailService.sendPolicyConfirmationEmail(email, policyId, policyName, amount);
     }
