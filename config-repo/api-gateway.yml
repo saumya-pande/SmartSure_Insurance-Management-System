@@ -57,8 +57,6 @@ spring:
                 - Path=/api/policies/**
               filters:
                 - Authentication
-                - RoleCheck=ROLE_CUSTOMER
-              # Any authenticated user (ROLE_USER or ROLE_ADMIN) can access
 
               #for admin access in policy service
             - id: policy-admin-service

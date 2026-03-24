@@ -51,4 +51,9 @@ public class User {
     @Column(name = "user_role", nullable = false) // Role-based access control (CUSTOMER, ADMIN)
     @Builder.Default
     private Role role = Role.CUSTOMER; 
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kyc_status", nullable = false)
+    @Builder.Default
+    private KycStatus kycStatus = KycStatus.PENDING;
 }

@@ -20,6 +20,7 @@ import com.dev.policy.repository.PolicyRepository;
 import com.dev.policy.repository.PolicyTypeRepository;
 import com.dev.policy.repository.PremiumRepository;
 import com.dev.policy.repository.VehicleDetailsRepository;
+import com.dev.policy.client.AuthServiceClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,7 +62,24 @@ public class PolicyPurchaseService {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    private AuthServiceClient authServiceClient;
+
     public PolicyResponse purchasePolicy(PurchasePolicyRequest request, Long userId, String email) {
+        // Enforce KYC VERIFIED gate before allowing any policy purchase
+        try {
+            String kycStatus = authServiceClient.getUserKycStatus(userId);
+            if (!"VERIFIED".equals(kycStatus)) {
+                throw new IllegalArgumentException(
+                    "Your KYC is currently " + kycStatus + ". Please complete KYC verification before purchasing a policy."
+                );
+            }
+        } catch (IllegalArgumentException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Unable to verify KYC status. Please try again later.");
+        }
+
         PolicyType type = policyTypeRepository.findById(request.getPolicyTypeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Policy Type not found: " + request.getPolicyTypeId()));
 
@@ -114,18 +132,8 @@ public class PolicyPurchaseService {
         // Calculate Premium
         createPremium(policy, type.getBasePremium());
 
-        policy.setStatus(PolicyStatus.ACTIVE);
+        policy.setStatus(PolicyStatus.PENDING_APPROVAL);
         Policy savedPolicy = policyRepository.save(policy);
-
-        // Publish to RabbitMQ
-        java.util.Map<String, Object> payload = new java.util.HashMap<>();
-        payload.put("email", email);
-        payload.put("policyId", savedPolicy.getId());
-        payload.put("policyName", type.getName());
-        payload.put("amount", type.getBasePremium());
-        rabbitTemplate.convertAndSend(com.dev.policy.config.RabbitMQConfig.EXCHANGE_NAME, 
-                                      com.dev.policy.config.RabbitMQConfig.ROUTING_KEY_PURCHASED, 
-                                      payload);
 
         return policyMapper.toResponse(savedPolicy);
     }
@@ -150,5 +158,26 @@ public class PolicyPurchaseService {
         return policyRepository.findById(id)
                 .map(policyMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Policy not found: " + id));
+    }
+
+    public PolicyResponse updatePolicyStatus(Long id, PolicyStatus status, String customerEmail) {
+        Policy policy = policyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Policy not found: " + id));
+
+        policy.setStatus(status);
+        Policy savedPolicy = policyRepository.save(policy);
+
+        if (status == PolicyStatus.ACTIVE && customerEmail != null) {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("email", customerEmail);
+            payload.put("policyId", savedPolicy.getId());
+            payload.put("policyName", policy.getPolicyType().getName());
+            payload.put("amount", policy.getPolicyType().getBasePremium());
+            rabbitTemplate.convertAndSend(com.dev.policy.config.RabbitMQConfig.EXCHANGE_NAME, 
+                                          com.dev.policy.config.RabbitMQConfig.ROUTING_KEY_PURCHASED, 
+                                          payload);
+        }
+
+        return policyMapper.toResponse(savedPolicy);
     }
 }
