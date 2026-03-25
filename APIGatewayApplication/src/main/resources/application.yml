@@ -11,7 +11,11 @@ spring:
               uri: lb://AUTH-SERVICE
               predicates:
                 - Path=/api/auth/**
-    
+            - id: kyc
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/api/kyc/**
+
             - id: auth-docs
               uri: lb://AUTH-SERVICE
               predicates:
@@ -42,7 +46,8 @@ spring:
                 - Path=/claims/v3/api-docs/**
               filters:
                 - RewritePath=/claims/(?<segment>.*), /${segment}
-
+  application:
+    name: api-gateway
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

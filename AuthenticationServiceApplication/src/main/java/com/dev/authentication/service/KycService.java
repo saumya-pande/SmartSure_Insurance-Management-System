@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.dev.authentication.dto.KycRequest;
 import com.dev.authentication.entity.Kyc;
 import com.dev.authentication.entity.KycStatus;
 import com.dev.authentication.entity.User;
@@ -21,29 +22,26 @@ public class KycService {
 
     private final String UPLOAD_DIR = "uploads/";
 
-    public void upload(Long userId, String type, String address, MultipartFile file) throws Exception {
+    public void upload(String email, KycRequest request, MultipartFile file) throws Exception {
 
-        User user = userRepo.findById(userId).orElseThrow();
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
-        // create folder if not exists
         Path uploadPath = Paths.get(UPLOAD_DIR);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        // generate unique filename
         String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-
         Path filePath = uploadPath.resolve(fileName);
-
-        // save file
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         Kyc kyc = Kyc.builder()
-                .documentType(type)
+                .contactNumber(request.getContactNumber())  
+                .documentType(request.getDocumentType())    
                 .documentPath(filePath.toString())
-                .address(address)
-                .status(KycStatus.APPROVED)
+                .address(request.getAddress())              
+                .status(KycStatus.PENDING)
                 .user(user)
                 .build();
 

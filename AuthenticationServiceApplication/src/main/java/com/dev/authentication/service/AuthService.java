@@ -25,7 +25,7 @@ public class AuthService {
     private final PasswordEncoder encoder;
     private final JwtUtil jwt;
 
-    public AuthResponse register(RegisterRequest request) {
+    public String register(RegisterRequest request) {
 
         User user = User.builder()
                 .name(request.getName())
@@ -36,8 +36,7 @@ public class AuthService {
                 .build();
 
         repo.save(user);
-
-        return generateTokens(user);
+        return "User registered successfully";
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -62,9 +61,10 @@ public class AuthService {
     
     private final Set<String> revokedTokens = new HashSet<>();
 
-    public void logout(String token) {
+    public String logout(String token) {
         revokedTokens.add(token);
-    }
+        return "Logged out sucessfully!";
+        }
 
     public boolean isRevoked(String token) {
         return revokedTokens.contains(token);

@@ -18,16 +18,19 @@ public class User {
 
     private String name;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     @Email
     private String email;
 
     private String password;
-
+    
+    @Builder.Default
     @Enumerated(EnumType.STRING)
-    private Role role;
-
-    private boolean active;
+    private Role role = Role.CUSTOMER;
+    
+    @Builder.Default
+    private boolean active = true;
+    
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Kyc kyc;
