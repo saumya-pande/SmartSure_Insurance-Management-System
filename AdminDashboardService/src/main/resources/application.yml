@@ -1,0 +1,47 @@
+server:
+  port: 8084
+  forward-headers-strategy: native
+
+spring:
+  application:
+    name: admin-service
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+
+eureka:
+  instance:
+    hostname: 127.0.0.1
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: false
+
+spring.cloud:
+  openfeign:
+    circuitbreaker:
+      enabled: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 5
+        sliding-window-type: COUNT_BASED
+    instances:
+      AUTH-SERVICE:
+        base-config: default
+      POLICY-SERVICE:
+        base-config: default
+      CLAIMS-SERVICE:
+        base-config: default

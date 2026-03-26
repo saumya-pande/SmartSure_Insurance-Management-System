@@ -3,17 +3,25 @@ package com.dev.authentication.service;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.dev.authentication.config.RabbitMQConfig;
 import com.dev.authentication.dto.AuthResponse;
 import com.dev.authentication.dto.LoginRequest;
 import com.dev.authentication.dto.RegisterRequest;
 import com.dev.authentication.entity.Role;
 import com.dev.authentication.entity.User;
+import com.dev.authentication.exception.DuplicateResourceException;
+import com.dev.authentication.exception.EntityNotFoundException;
+import com.dev.authentication.exception.InvalidOperationException;
 import com.dev.authentication.repository.UserRepository;
 import com.dev.authentication.security.JwtUtil;
 
@@ -24,8 +32,14 @@ public class AuthService {
     private final UserRepository repo;
     private final PasswordEncoder encoder;
     private final JwtUtil jwt;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     public String register(RegisterRequest request) {
+
+        if (repo.findByEmail(request.getEmail()).isPresent()) {
+            throw new DuplicateResourceException("User", "email", request.getEmail());
+        }
 
         User user = User.builder()
                 .name(request.getName())
@@ -36,16 +50,22 @@ public class AuthService {
                 .build();
 
         repo.save(user);
-        return "User registered successfully";
+        
+        Map<String, String> payload = new HashMap<>();
+        payload.put("email", user.getEmail());
+        payload.put("name", user.getName());
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_REGISTER, payload);
+
+        return "User registered successfully!";
     }
 
     public AuthResponse login(LoginRequest request) {
 
         User user = repo.findByEmail(request.getEmail())
-                .orElseThrow();
+                .orElseThrow(() -> new EntityNotFoundException("User", "email", request.getEmail()));
 
         if (!encoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidOperationException("Invalid credentials");
         }
 
         return generateTokens(user);
@@ -63,7 +83,7 @@ public class AuthService {
 
     public String logout(String token) {
         revokedTokens.add(token);
-        return "Logged out sucessfully!";
+        return "Logged out successfully!";
         }
 
     public boolean isRevoked(String token) {

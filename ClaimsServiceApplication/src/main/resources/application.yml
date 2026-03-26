@@ -1,0 +1,40 @@
+server:
+  port: 8083
+  forward-headers-strategy: native
+
+spring:
+  application:
+    name: claims-service
+  datasource:
+    url: ${CLAIMS_DB_URL}
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+
+eureka:
+  instance:
+    hostname: 127.0.0.1
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: false
+
+file:
+  upload-dir: E:/SmartSure/claims-uploads/

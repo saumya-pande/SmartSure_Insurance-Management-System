@@ -1,3 +1,4 @@
+
 server:
   port: 8080
 
@@ -6,48 +7,68 @@ spring:
     gateway:
       server:
         webflux:
-          routes:
-            - id: auth
-              uri: lb://AUTH-SERVICE
-              predicates:
-                - Path=/api/auth/**
-            - id: kyc
-              uri: lb://AUTH-SERVICE
-              predicates:
-                - Path=/api/kyc/**
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: "*"
+                allowedMethods: "*"
+                allowedHeaders: "*"
+      routes:
+        - id: auth
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
 
-            - id: auth-docs
-              uri: lb://AUTH-SERVICE
-              predicates:
-                - Path=/auth/v3/api-docs/**,/auth/swagger-ui/**,/auth/webjars/**
-              filters:
-                - RewritePath=/auth/(?<segment>.*), /${segment}
-    
-            - id: policy
-              uri: lb://POLICY-SERVICE
-              predicates:
-                - Path=/api/policies/**
-    
-            - id: policy-docs
-              uri: lb://POLICY-SERVICE
-              predicates:
-                - Path=/policy/v3/api-docs/**
-              filters:
-                - RewritePath=/policy/(?<segment>.*), /${segment}
-    
-            - id: claims
-              uri: lb://CLAIMS-SERVICE
-              predicates:
-                - Path=/api/claims/**
-    
-            - id: claims-docs
-              uri: lb://CLAIMS-SERVICE
-              predicates:
-                - Path=/claims/v3/api-docs/**
-              filters:
-                - RewritePath=/claims/(?<segment>.*), /${segment}
+        - id: kyc
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/kyc/**
+
+        - id: auth-docs
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth/v3/api-docs/**,/auth/swagger-ui/**,/auth/webjars/**
+          filters:
+            - RewritePath=/auth/(?<segment>.*), /${segment}
+
+        - id: policy
+          uri: lb://policy-service
+          predicates:
+            - Path=/api/policies/**
+
+        - id: policy-docs
+          uri: lb://policy-service
+          predicates:
+            - Path=/policy/v3/api-docs/**
+          filters:
+            - RewritePath=/policy/(?<segment>.*), /${segment}
+
+        - id: claims
+          uri: lb://claims-service
+          predicates:
+            - Path=/api/claims/**
+
+        - id: claims-docs
+          uri: lb://claims-service
+          predicates:
+            - Path=/claims/v3/api-docs/**
+          filters:
+            - RewritePath=/claims/(?<segment>.*), /${segment}
+        - id: admin
+          uri: lb://admin-service
+          predicates:
+            - Path=/api/dashboard/**
+
+        - id: admin-docs
+          uri: lb://admin-service
+          predicates:
+            - Path=/admin/v3/api-docs/**
+          filters:
+            - RewritePath=/admin/(?<segment>.*), /${segment}
+
   application:
     name: api-gateway
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -58,7 +79,17 @@ springdoc:
         url: /policy/v3/api-docs
       - name: Claims Service
         url: /claims/v3/api-docs
+      - name: Admin Service
+        url: /admin/v3/api-docs
+
+eureka:
+  instance:
+    hostname: 127.0.0.1
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
 
 jwt:
-  secret: HatsuneMikuagdawififafoawfnwa6767dhawdda
-  expiration: 900000
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:900000}

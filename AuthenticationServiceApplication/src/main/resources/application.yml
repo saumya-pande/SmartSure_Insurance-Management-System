@@ -6,9 +6,9 @@ spring:
   application:
     name: auth-service
   datasource:
-    url: jdbc:mysql://localhost:3306/smartsure_auth_db?createDatabaseIfNotExist=true
-    username: root
-    password: 3141@MySQL
+    url: ${AUTH_DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -22,15 +22,15 @@ spring:
 
 eureka:
   instance:
-    hostname: localhost
-    prefer-ip-address: false
+    hostname: 127.0.0.1
+    prefer-ip-address: true
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://127.0.0.1:8761/eureka/
 
 jwt:
-  secret: HatsuneMikuagdawififafoawfnwa6767dhawdda
-  expiration: 900000
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:900000}
 
 springdoc:
   api-docs:
@@ -38,3 +38,6 @@ springdoc:
   swagger-ui:
     enabled: false                        
   override-with-generic-response: false
+
+app:
+  upload-dir: E:/SmartSure/uploads/ 
