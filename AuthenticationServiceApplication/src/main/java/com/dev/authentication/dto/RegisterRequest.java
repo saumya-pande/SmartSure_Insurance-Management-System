@@ -30,7 +30,6 @@ public class RegisterRequest {
         message = "Password must contain at least one digit, one lowercase, one uppercase, and one special character"
     )
     private String password;
-    
-   
-    
+
+    private Role role = Role.CUSTOMER;
 }

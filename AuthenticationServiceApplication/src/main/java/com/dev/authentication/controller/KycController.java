@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.dev.authentication.dto.KycRequest;
 import com.dev.authentication.dto.KycResponse;
 import com.dev.authentication.entity.Kyc;
-import com.dev.authentication.entity.KycStatus;
+
 import com.dev.authentication.service.KycService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -79,17 +79,7 @@ public class KycController {
         return ResponseEntity.ok(service.getAll(PageRequest.of(page, size, Sort.by(sortBy))));
     }
 
-    // ADMIN — update KYC status
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
-    @Operation(summary = "Update KYC status (admin)")
-    public ResponseEntity<String> update(
-            @PathVariable Long id,
-            @RequestParam KycStatus status
-    ) {
-        service.updateStatus(id, status);
-        return ResponseEntity.ok("KYC status updated");
-    }
+
     
 //    @PreAuthorize("hasRole('ADMIN')")
 //    @GetMapping("/{id}")

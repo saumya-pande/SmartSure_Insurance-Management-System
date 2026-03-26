@@ -27,48 +27,48 @@ public interface PolicyClient {
 
     @PutMapping("/api/admin/policies/{id}")
     BasicPolicyResponse updatePolicy(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @RequestBody BasicPolicyRequest request,
             @RequestHeader("X-User-Role") String userRole
     );
 
     @DeleteMapping("/api/admin/policies/{id}")
     void deletePolicy(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @RequestHeader("X-User-Role") String userRole
     );
 
     @PatchMapping("/api/admin/policies/{id}/status")
     BasicPolicyResponse updatePolicyStatus(
-            @PathVariable Long id,
-            @RequestParam com.dev.dashboard.entity.PolicyStatus status,
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "status") com.dev.dashboard.entity.PolicyStatus status,
             @RequestHeader("X-User-Role") String userRole
     );
 
     @GetMapping("/api/admin/policies")
     Page<BasicPolicyResponse> getBasicPolicies(
-            @RequestParam(required = false) PolicyType type,
-            @RequestParam(required = false) com.dev.dashboard.entity.PolicyStatus status,
-            @RequestParam(required = false) String policyName,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(name = "type", required = false) PolicyType type,
+            @RequestParam(name = "status", required = false) com.dev.dashboard.entity.PolicyStatus status,
+            @RequestParam(name = "policyName", required = false) String policyName,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
             @RequestHeader("X-User-Role") String userRole
     );
 
     // customer policies
     @GetMapping("/api/admin/policies/purchased")
     Page<CustomerPolicyResponse> getCustomerPolicies(
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) com.dev.dashboard.entity.PolicyType policyType,
-            @RequestParam(required = false) com.dev.dashboard.entity.PurchaseStatus status,
-            @RequestParam(required = false) Double minPremium,
-            @RequestParam(required = false) Double maxPremium,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "policyType", required = false) com.dev.dashboard.entity.PolicyType policyType,
+            @RequestParam(name = "status", required = false) com.dev.dashboard.entity.PurchaseStatus status,
+            @RequestParam(name = "minPremium", required = false) Double minPremium,
+            @RequestParam(name = "maxPremium", required = false) Double maxPremium,
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
             @RequestHeader("X-User-Role") String userRole
     );
 

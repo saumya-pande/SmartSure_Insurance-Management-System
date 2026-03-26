@@ -15,19 +15,19 @@ public interface ClaimsClient {
 
     @GetMapping("/api/admin/claims")
     Page<ClaimResponse> getClaims(
-            @RequestParam(required = false) ClaimStatus status,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(name = "status", required = false) ClaimStatus status,
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestHeader("X-User-Role") String userRole
     );
 
     @PatchMapping("/api/admin/claims/{id}/status")
     ClaimResponse overrideClaimStatus(
-            @PathVariable Long id,
-            @RequestParam ClaimStatus status,
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "status") ClaimStatus status,
             @RequestHeader("X-User-Role") String userRole
     );
 

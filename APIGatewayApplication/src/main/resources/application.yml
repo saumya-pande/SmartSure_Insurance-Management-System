@@ -24,6 +24,11 @@ spring:
           predicates:
             - Path=/api/kyc/**
 
+        - id: auth-admin
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/admin/**
+
         - id: auth-docs
           uri: lb://auth-service
           predicates:

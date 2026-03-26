@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @FeignClient(name = "POLICY-SERVICE")
 public interface PolicyClient {
 
-    @GetMapping("/api/policies/purchase/{id}")
+    @GetMapping("/api/policies/purchase/purchase/{id}")
     CustomerPolicyResponse getPolicyById(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader("X-User-Role") String role
     );

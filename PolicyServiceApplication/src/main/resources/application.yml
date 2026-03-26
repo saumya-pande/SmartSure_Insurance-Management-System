@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: policy-service
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   datasource:
     url: ${POLICY_DB_URL}
     username: ${DB_USERNAME}

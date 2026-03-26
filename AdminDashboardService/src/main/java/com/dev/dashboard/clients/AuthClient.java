@@ -18,36 +18,36 @@ public interface AuthClient {
     // users
     @GetMapping("/api/admin/users")
     Page<UserResponse> getUsers(
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) Role role,
-            @RequestParam(required = false) Boolean active,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "role", required = false) Role role,
+            @RequestParam(name = "active", required = false) Boolean active,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestHeader("X-User-Role") String userRole
     );
 
     @PatchMapping("/api/admin/users/{id}/status")
     UserResponse toggleUserStatus(
-            @PathVariable Long id,
-            @RequestParam boolean active,
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "active") boolean active,
             @RequestHeader("X-User-Role") String userRole
     );
 
     // kyc
     @GetMapping("/api/admin/kyc")
     Page<KycResponse> getKyc(
-            @RequestParam(required = false) KycStatus status,
-            @RequestParam(required = false) String email,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(name = "status", required = false) KycStatus status,
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestHeader("X-User-Role") String userRole
     );
 
     @PatchMapping("/api/admin/kyc/{id}/status")
     KycResponse updateKycStatus(
-            @PathVariable Long id,
-            @RequestParam KycStatus status,
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "status") KycStatus status,
             @RequestHeader("X-User-Role") String userRole
     );
 
