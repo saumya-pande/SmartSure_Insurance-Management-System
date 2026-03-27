@@ -45,12 +45,12 @@ public class AdminController {
     @GetMapping("/users")
     @Operation(summary = "Get all users with filters")
     public ResponseEntity<Page<UserResponse>> getUsers(
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) Role role,
-            @RequestParam(required = false) Boolean active,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "role", required = false) Role role,
+            @RequestParam(name = "active", required = false) Boolean active,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(service.getUsers(email, name, role, active, page, size));
     }
@@ -58,8 +58,8 @@ public class AdminController {
     @PatchMapping("/users/{id}/status")
     @Operation(summary = "Suspend or activate a user")
     public ResponseEntity<UserResponse> toggleUserStatus(
-            @PathVariable Long id,
-            @RequestParam boolean active
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "active") boolean active
     ) {
         return ResponseEntity.ok(service.toggleUserStatus(id, active));
     }
@@ -69,10 +69,10 @@ public class AdminController {
     @GetMapping("/kyc")
     @Operation(summary = "Get all KYC submissions with filters")
     public ResponseEntity<Page<KycResponse>> getKyc(
-            @RequestParam(required = false) KycStatus status,
-            @RequestParam(required = false) String email,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(name = "status", required = false) KycStatus status,
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(service.getKyc(status, email, page, size));
     }
@@ -80,8 +80,8 @@ public class AdminController {
     @PatchMapping("/kyc/{id}/status")
     @Operation(summary = "Update KYC status")
     public ResponseEntity<KycResponse> updateKycStatus(
-            @PathVariable Long id,
-            @RequestParam KycStatus status
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "status") KycStatus status
     ) {
         return ResponseEntity.ok(service.updateKycStatus(id, status));
     }
@@ -99,7 +99,7 @@ public class AdminController {
     @PutMapping("/policies/{id}")
     @Operation(summary = "Update basic policy")
     public ResponseEntity<BasicPolicyResponse> updatePolicy(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @Valid @RequestBody BasicPolicyRequest request
     ) {
         return ResponseEntity.ok(service.updatePolicy(id, request));
@@ -107,7 +107,7 @@ public class AdminController {
 
     @DeleteMapping("/policies/{id}")
     @Operation(summary = "Delete basic policy")
-    public ResponseEntity<String> deletePolicy(@PathVariable Long id) {
+    public ResponseEntity<String> deletePolicy(@PathVariable(name = "id") Long id) {
         service.deletePolicy(id);
         return ResponseEntity.ok("Policy deleted");
     }
@@ -115,8 +115,8 @@ public class AdminController {
     @PatchMapping("/policies/{id}/status")
     @Operation(summary = "Update basic policy status")
     public ResponseEntity<BasicPolicyResponse> updatePolicyStatus(
-            @PathVariable Long id,
-            @RequestParam PolicyStatus status
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "status") PolicyStatus status
     ) {
         return ResponseEntity.ok(service.updatePolicyStatus(id, status));
     }
@@ -124,12 +124,12 @@ public class AdminController {
     @GetMapping("/policies")
     @Operation(summary = "Get basic policies with filters")
     public ResponseEntity<Page<BasicPolicyResponse>> getBasicPolicies(
-            @RequestParam(required = false) PolicyType type,
-            @RequestParam(required = false) PolicyStatus status,
-            @RequestParam(required = false) String policyName,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy
+            @RequestParam(name = "type", required = false) PolicyType type,
+            @RequestParam(name = "status", required = false) PolicyStatus status,
+            @RequestParam(name = "policyName", required = false) String policyName,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy
     ) {
         return ResponseEntity.ok(
                 service.getBasicPolicies(type, status, policyName, page, size, sortBy));
@@ -140,16 +140,16 @@ public class AdminController {
     @GetMapping("/policies/purchased")
     @Operation(summary = "Get customer policies with filters")
     public ResponseEntity<Page<CustomerPolicyResponse>> getCustomerPolicies(
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) PolicyType policyType,
-            @RequestParam(required = false) PurchaseStatus status,
-            @RequestParam(required = false) Double minPremium,
-            @RequestParam(required = false) Double maxPremium,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "policyType", required = false) PolicyType policyType,
+            @RequestParam(name = "status", required = false) PurchaseStatus status,
+            @RequestParam(name = "minPremium", required = false) Double minPremium,
+            @RequestParam(name = "maxPremium", required = false) Double maxPremium,
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy
     ) {
         return ResponseEntity.ok(service.getCustomerPolicies(
                 email, policyType, status, minPremium, maxPremium,
@@ -161,12 +161,12 @@ public class AdminController {
     @GetMapping("/claims")
     @Operation(summary = "Get all claims with filters")
     public ResponseEntity<Page<ClaimResponse>> getClaims(
-            @RequestParam(required = false) ClaimStatus status,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(name = "status", required = false) ClaimStatus status,
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(
                 service.getClaims(status, email, startDate, endDate, page, size));
@@ -175,8 +175,8 @@ public class AdminController {
     @PatchMapping("/claims/{id}/status")
     @Operation(summary = "Override claim status (admin)")
     public ResponseEntity<ClaimResponse> overrideClaimStatus(
-            @PathVariable Long id,
-            @RequestParam ClaimStatus status
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "status") ClaimStatus status
     ) {
         return ResponseEntity.ok(service.overrideClaimStatus(id, status));
     }

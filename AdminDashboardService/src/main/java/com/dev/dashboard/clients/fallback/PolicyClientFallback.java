@@ -19,45 +19,45 @@ public class PolicyClientFallback implements PolicyClient {
     private static final String SERVICE_NAME = "Policy Service";
 
     @Override
-    public BasicPolicyResponse createPolicy(BasicPolicyRequest request, String userRole) {
+    public BasicPolicyResponse createPolicy(BasicPolicyRequest request, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public BasicPolicyResponse updatePolicy(Long id, BasicPolicyRequest request, String userRole) {
+    public BasicPolicyResponse updatePolicy(Long id, BasicPolicyRequest request, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public void deletePolicy(Long id, String userRole) {
+    public void deletePolicy(Long id, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public BasicPolicyResponse updatePolicyStatus(Long id, PolicyStatus status, String userRole) {
+    public BasicPolicyResponse updatePolicyStatus(Long id, PolicyStatus status, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
     public Page<BasicPolicyResponse> getBasicPolicies(PolicyType type, PolicyStatus status,
-            String policyName, int page, int size, String sortBy, String userRole) {
+            String policyName, int page, int size, String sortBy, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
     public Page<CustomerPolicyResponse> getCustomerPolicies(String email, PolicyType policyType,
             PurchaseStatus status, Double minPremium, Double maxPremium,
-            String startDate, String endDate, int page, int size, String sortBy, String userRole) {
+            String startDate, String endDate, int page, int size, String sortBy, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public Map<String, Long> getPolicyCounts(String userRole) {
+    public Map<String, Long> getPolicyCounts(String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public Map<String, Double> getRevenue(String userRole) {
+    public Map<String, Double> getRevenue(String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 }

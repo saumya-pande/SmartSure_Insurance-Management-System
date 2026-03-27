@@ -5,6 +5,8 @@ import com.dev.dashboard.clients.ClaimsClient;
 import com.dev.dashboard.clients.PolicyClient;
 import com.dev.dashboard.dto.DashboardResponse;
 import com.dev.dashboard.dto.UserResponse;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,9 +14,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,6 +40,19 @@ class AdminDashboardServiceTest {
     @InjectMocks
     private AdminDashboardService adminService;
 
+    @BeforeEach
+    void setUpSecurityContext() {
+        var auth = new UsernamePasswordAuthenticationToken(
+                "admin@example.com", null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Test
     void getDashboard_success() {
         Map<String, Long> userCounts = new HashMap<>();
@@ -43,12 +62,12 @@ class AdminDashboardServiceTest {
         Map<String, Long> kycCounts = new HashMap<>();
         kycCounts.put("PENDING", 5L);
 
-        when(authClient.getUserCounts(anyString())).thenReturn(userCounts);
-        when(authClient.getKycCounts(anyString())).thenReturn(kycCounts);
-        when(policyClient.getPolicyCounts(anyString())).thenReturn(Collections.emptyMap());
-        when(policyClient.getRevenue(anyString())).thenReturn(Collections.emptyMap());
-        when(claimsClient.getClaimCounts(anyString())).thenReturn(Collections.emptyMap());
-        when(claimsClient.getPayouts(anyString())).thenReturn(Collections.emptyMap());
+        when(authClient.getUserCounts(anyString(), anyString())).thenReturn(userCounts);
+        when(authClient.getKycCounts(anyString(), anyString())).thenReturn(kycCounts);
+        when(policyClient.getPolicyCounts(anyString(), anyString())).thenReturn(Collections.emptyMap());
+        when(policyClient.getRevenue(anyString(), anyString())).thenReturn(Collections.emptyMap());
+        when(claimsClient.getClaimCounts(anyString(), anyString())).thenReturn(Collections.emptyMap());
+        when(claimsClient.getPayouts(anyString(), anyString())).thenReturn(Collections.emptyMap());
 
         DashboardResponse response = adminService.getDashboard();
 
@@ -61,7 +80,7 @@ class AdminDashboardServiceTest {
     @Test
     void getUsers_success() {
         Page<UserResponse> page = new PageImpl<>(Collections.emptyList());
-        when(authClient.getUsers(any(), any(), any(), any(), anyInt(), anyInt(), anyString()))
+        when(authClient.getUsers(any(), any(), any(), any(), anyInt(), anyInt(), anyString(), anyString()))
                 .thenReturn(page);
 
         Page<UserResponse> result = adminService.getUsers(null, null, null, null, 0, 10);
@@ -76,7 +95,7 @@ class AdminDashboardServiceTest {
         user.setId(1L);
         user.setActive(false);
 
-        when(authClient.toggleUserStatus(eq(1L), eq(false), anyString())).thenReturn(user);
+        when(authClient.toggleUserStatus(eq(1L), eq(false), anyString(), anyString())).thenReturn(user);
 
         UserResponse result = adminService.toggleUserStatus(1L, false);
 

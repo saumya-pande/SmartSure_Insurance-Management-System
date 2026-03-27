@@ -24,14 +24,16 @@ public interface AuthClient {
             @RequestParam(name = "active", required = false) Boolean active,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     @PatchMapping("/api/admin/users/{id}/status")
     UserResponse toggleUserStatus(
             @PathVariable(name = "id") Long id,
             @RequestParam(name = "active") boolean active,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     // kyc
@@ -41,20 +43,28 @@ public interface AuthClient {
             @RequestParam(name = "email", required = false) String email,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     @PatchMapping("/api/admin/kyc/{id}/status")
     KycResponse updateKycStatus(
             @PathVariable(name = "id") Long id,
             @RequestParam(name = "status") KycStatus status,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     // dashboard counts
     @GetMapping("/api/admin/users/count")
-    Map<String, Long> getUserCounts(@RequestHeader("X-User-Role") String userRole);
+    Map<String, Long> getUserCounts(
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
+    );
 
     @GetMapping("/api/admin/kyc/count")
-    Map<String, Long> getKycCounts(@RequestHeader("X-User-Role") String userRole);
+    Map<String, Long> getKycCounts(
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
+    );
 }

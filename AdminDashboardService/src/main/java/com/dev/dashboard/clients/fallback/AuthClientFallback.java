@@ -18,33 +18,33 @@ public class AuthClientFallback implements AuthClient {
 
     @Override
     public Page<UserResponse> getUsers(String email, String name, Role role,
-            Boolean active, int page, int size, String userRole) {
+            Boolean active, int page, int size, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public UserResponse toggleUserStatus(Long id, boolean active, String userRole) {
+    public UserResponse toggleUserStatus(Long id, boolean active, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
     public Page<KycResponse> getKyc(KycStatus status, String email,
-            int page, int size, String userRole) {
+            int page, int size, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public KycResponse updateKycStatus(Long id, KycStatus status, String userRole) {
+    public KycResponse updateKycStatus(Long id, KycStatus status, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public Map<String, Long> getUserCounts(String userRole) {
+    public Map<String, Long> getUserCounts(String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public Map<String, Long> getKycCounts(String userRole) {
+    public Map<String, Long> getKycCounts(String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 }

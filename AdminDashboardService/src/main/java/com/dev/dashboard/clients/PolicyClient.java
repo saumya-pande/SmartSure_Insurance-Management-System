@@ -22,27 +22,31 @@ public interface PolicyClient {
     @PostMapping("/api/admin/policies")
     BasicPolicyResponse createPolicy(
             @RequestBody BasicPolicyRequest request,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     @PutMapping("/api/admin/policies/{id}")
     BasicPolicyResponse updatePolicy(
             @PathVariable(name = "id") Long id,
             @RequestBody BasicPolicyRequest request,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     @DeleteMapping("/api/admin/policies/{id}")
     void deletePolicy(
             @PathVariable(name = "id") Long id,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     @PatchMapping("/api/admin/policies/{id}/status")
     BasicPolicyResponse updatePolicyStatus(
             @PathVariable(name = "id") Long id,
             @RequestParam(name = "status") com.dev.dashboard.entity.PolicyStatus status,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     @GetMapping("/api/admin/policies")
@@ -53,7 +57,8 @@ public interface PolicyClient {
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     // customer policies
@@ -69,13 +74,20 @@ public interface PolicyClient {
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     // dashboard counts
     @GetMapping("/api/admin/policies/count")
-    Map<String, Long> getPolicyCounts(@RequestHeader("X-User-Role") String userRole);
+    Map<String, Long> getPolicyCounts(
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
+    );
 
     @GetMapping("/api/admin/policies/revenue")
-    Map<String, Double> getRevenue(@RequestHeader("X-User-Role") String userRole);
+    Map<String, Double> getRevenue(
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
+    );
 }

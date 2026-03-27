@@ -21,19 +21,27 @@ public interface ClaimsClient {
             @RequestParam(name = "endDate", required = false) String endDate,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     @PatchMapping("/api/claims/{id}/status")
     ClaimResponse overrideClaimStatus(
             @PathVariable(name = "id") Long id,
             @RequestParam(name = "status") ClaimStatus status,
-            @RequestHeader("X-User-Role") String userRole
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
     );
 
     @GetMapping("/api/claims/count")
-    Map<String, Long> getClaimCounts(@RequestHeader("X-User-Role") String userRole);
+    Map<String, Long> getClaimCounts(
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
+    );
 
     @GetMapping("/api/claims/payouts")
-    Map<String, Double> getPayouts(@RequestHeader("X-User-Role") String userRole);
+    Map<String, Double> getPayouts(
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Email") String userEmail
+    );
 }

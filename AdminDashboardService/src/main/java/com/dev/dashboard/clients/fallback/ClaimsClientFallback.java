@@ -16,22 +16,22 @@ public class ClaimsClientFallback implements ClaimsClient {
 
     @Override
     public Page<ClaimResponse> getClaims(ClaimStatus status, String email,
-            String startDate, String endDate, int page, int size, String userRole) {
+            String startDate, String endDate, int page, int size, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public ClaimResponse overrideClaimStatus(Long id, ClaimStatus status, String userRole) {
+    public ClaimResponse overrideClaimStatus(Long id, ClaimStatus status, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public Map<String, Long> getClaimCounts(String userRole) {
+    public Map<String, Long> getClaimCounts(String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public Map<String, Double> getPayouts(String userRole) {
+    public Map<String, Double> getPayouts(String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 }

@@ -3,6 +3,7 @@ package com.dev.dashboard.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.dev.dashboard.clients.AuthClient;
@@ -20,8 +21,8 @@ import com.dev.dashboard.entity.KycStatus;
 
 import com.dev.dashboard.entity.PurchaseStatus;
 import com.dev.dashboard.entity.Role;
-import com.dev.dashboard.entity.PolicyType;      // ← Add this import
-import com.dev.dashboard.entity.PolicyStatus; 
+import com.dev.dashboard.entity.PolicyType;
+import com.dev.dashboard.entity.PolicyStatus;
 
 import java.util.Map;
 
@@ -35,15 +36,21 @@ public class AdminDashboardService {
 
     private static final String ADMIN_ROLE = "ROLE_ADMIN";
 
+    /** Extract the admin's email from the SecurityContext (set by HeaderAuthFilter). */
+    private String currentEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
     // ── Dashboard ─────────────────────────────────────────────
 
     public DashboardResponse getDashboard() {
-        Map<String, Long> userCounts   = authClient.getUserCounts(ADMIN_ROLE);
-        Map<String, Long> kycCounts    = authClient.getKycCounts(ADMIN_ROLE);
-        Map<String, Long> policyCounts = policyClient.getPolicyCounts(ADMIN_ROLE);
-        Map<String, Double> policyRevenue = policyClient.getRevenue(ADMIN_ROLE);
-        Map<String, Long> claimCounts  = claimsClient.getClaimCounts(ADMIN_ROLE);
-        Map<String, Double> claimPayouts = claimsClient.getPayouts(ADMIN_ROLE);
+        String email = currentEmail();
+        Map<String, Long> userCounts   = authClient.getUserCounts(ADMIN_ROLE, email);
+        Map<String, Long> kycCounts    = authClient.getKycCounts(ADMIN_ROLE, email);
+        Map<String, Long> policyCounts = policyClient.getPolicyCounts(ADMIN_ROLE, email);
+        Map<String, Double> policyRevenue = policyClient.getRevenue(ADMIN_ROLE, email);
+        Map<String, Long> claimCounts  = claimsClient.getClaimCounts(ADMIN_ROLE, email);
+        Map<String, Double> claimPayouts = claimsClient.getPayouts(ADMIN_ROLE, email);
 
         Double grossRevenue = policyRevenue.getOrDefault("total", 0.0);
         Double totalPayouts = claimPayouts.getOrDefault("total", 0.0);
@@ -88,47 +95,47 @@ public class AdminDashboardService {
 
     public Page<UserResponse> getUsers(String email, String name,
             Role role, Boolean active, int page, int size) {
-        return authClient.getUsers(email, name, role, active, page, size, ADMIN_ROLE);
+        return authClient.getUsers(email, name, role, active, page, size, ADMIN_ROLE, currentEmail());
     }
 
     public UserResponse toggleUserStatus(Long id, boolean active) {
-        return authClient.toggleUserStatus(id, active, ADMIN_ROLE);
+        return authClient.toggleUserStatus(id, active, ADMIN_ROLE, currentEmail());
     }
 
     // ── KYC ───────────────────────────────────────────────────
 
     public Page<KycResponse> getKyc(KycStatus status, String email,
             int page, int size) {
-        return authClient.getKyc(status, email, page, size, ADMIN_ROLE);
+        return authClient.getKyc(status, email, page, size, ADMIN_ROLE, currentEmail());
     }
 
     public KycResponse updateKycStatus(Long id, KycStatus status) {
-        return authClient.updateKycStatus(id, status, ADMIN_ROLE);
+        return authClient.updateKycStatus(id, status, ADMIN_ROLE, currentEmail());
     }
 
     // ── Basic Policies ────────────────────────────────────────
 
     public BasicPolicyResponse createPolicy(BasicPolicyRequest request) {
-        return policyClient.createPolicy(request, ADMIN_ROLE);
+        return policyClient.createPolicy(request, ADMIN_ROLE, currentEmail());
     }
 
     public BasicPolicyResponse updatePolicy(Long id, BasicPolicyRequest request) {
-        return policyClient.updatePolicy(id, request, ADMIN_ROLE);
+        return policyClient.updatePolicy(id, request, ADMIN_ROLE, currentEmail());
     }
 
     public void deletePolicy(Long id) {
-        policyClient.deletePolicy(id, ADMIN_ROLE);
+        policyClient.deletePolicy(id, ADMIN_ROLE, currentEmail());
     }
 
     public BasicPolicyResponse updatePolicyStatus(Long id, PolicyStatus status) {
-        return policyClient.updatePolicyStatus(id, status, ADMIN_ROLE);
+        return policyClient.updatePolicyStatus(id, status, ADMIN_ROLE, currentEmail());
     }
 
     public Page<BasicPolicyResponse> getBasicPolicies(PolicyType type,
             PolicyStatus status, String policyName,
             int page, int size, String sortBy) {
         return policyClient.getBasicPolicies(
-                type, status, policyName, page, size, sortBy, ADMIN_ROLE);
+                type, status, policyName, page, size, sortBy, ADMIN_ROLE, currentEmail());
     }
 
     // ── Customer Policies ─────────────────────────────────────
@@ -140,7 +147,7 @@ public class AdminDashboardService {
             int page, int size, String sortBy) {
         return policyClient.getCustomerPolicies(
                 email, policyType, status, minPremium, maxPremium,
-                startDate, endDate, page, size, sortBy, ADMIN_ROLE);
+                startDate, endDate, page, size, sortBy, ADMIN_ROLE, currentEmail());
     }
 
     // ── Claims ────────────────────────────────────────────────
@@ -148,10 +155,10 @@ public class AdminDashboardService {
     public Page<ClaimResponse> getClaims(ClaimStatus status, String email,
             String startDate, String endDate, int page, int size) {
         return claimsClient.getClaims(
-                status, email, startDate, endDate, page, size, ADMIN_ROLE);
+                status, email, startDate, endDate, page, size, ADMIN_ROLE, currentEmail());
     }
 
     public ClaimResponse overrideClaimStatus(Long id, ClaimStatus status) {
-        return claimsClient.overrideClaimStatus(id, status, ADMIN_ROLE);
+        return claimsClient.overrideClaimStatus(id, status, ADMIN_ROLE, currentEmail());
     }
 }
