@@ -1,45 +1,5 @@
-server:
-  port: 8081
-  forward-headers-strategy: native     
-
 spring:
   application:
     name: auth-service
-  lifecycle:
-    timeout-per-shutdown-phase: 30s
-  datasource:
-    url: ${AUTH_DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    database-platform: org.hibernate.dialect.MySQL8Dialect
-  autoconfigure:
-    exclude:
-     - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
-     - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
-
-eureka:
-  instance:
-    hostname: 127.0.0.1
-    prefer-ip-address: true
-  client:
-    service-url:
-      defaultZone: http://127.0.0.1:8761/eureka/
-
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:900000}
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs                    
-  swagger-ui:
-    enabled: false                        
-  override-with-generic-response: false
-
-app:
-  upload-dir: E:/SmartSure/uploads/ 
+  config:
+    import: "configserver:http://localhost:8888"

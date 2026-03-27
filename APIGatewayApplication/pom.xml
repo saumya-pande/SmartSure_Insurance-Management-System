@@ -32,6 +32,14 @@
 		<spring-cloud.version>2025.0.1</spring-cloud.version>
 	</properties>
 	<dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-config</artifactId>
+        </dependency>
 		 <!-- Gateway (WebFlux) -->
     <dependency>
         <groupId>org.springframework.cloud</groupId>
@@ -99,7 +107,7 @@
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
+        <dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-dependencies</artifactId>
 				<version>${spring-cloud.version}</version>
@@ -139,3 +147,6 @@
 	</build>
 
 </project>
+
+
+

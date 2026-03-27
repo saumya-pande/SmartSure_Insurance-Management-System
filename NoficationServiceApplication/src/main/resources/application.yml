@@ -1,40 +1,5 @@
-server:
-  port: 8085
-
 spring:
   application:
     name: notification-service
-  
-  rabbitmq:
-    host: 127.0.0.1
-    port: 5672
-    username: guest
-    password: guest
-
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${EMAIL_USERNAME}
-    password: ${EMAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
-  lifecycle:
-    timeout-per-shutdown-phase: 30s
-
-eureka:
-  instance:
-    hostname: 127.0.0.1
-    prefer-ip-address: true
-  client:
-    service-url:
-      defaultZone: http://127.0.0.1:8761/eureka/
-
-logging:
-  level:
-    com.dev.notification: DEBUG
-    org.springframework.amqp: DEBUG
+  config:
+    import: "configserver:http://localhost:8888"
