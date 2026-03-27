@@ -59,4 +59,26 @@ public class EmailService {
             log.error("Failed to send policy confirmation email to {}", toEmail, e);
         }
     }
+    public void sendClaimStatusEmail(String toEmail, Long claimId, String status, Double amount) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(toEmail);
+            helper.setSubject("SmartSure: Claim Status Update");
+            
+            String statusColor = "APPROVED".equalsIgnoreCase(status) ? "green" : "red";
+            String htmlContent = "<h3>Claim " + status + "</h3>"
+                    + "<p>Your claim (ID: <b>" + claimId + "</b>) has been reviewed.</p>"
+                    + "<p>Status: <b style='color:" + statusColor + "'>" + status + "</b></p>"
+                    + ("APPROVED".equalsIgnoreCase(status) ? "<p>Approved Amount: Rs. " + amount + "</p>" : "<p>We regret to inform you that your claim was not approved.</p>")
+                    + "<br/><p>Best Regards,</p><p>SmartSure Team</p>";
+                    
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            log.info("Claim status email sent successfully to {}", toEmail);
+            
+        } catch (MessagingException e) {
+            log.error("Failed to send claim status email to {}", toEmail, e);
+        }
+    }
 }

@@ -29,4 +29,9 @@ public class ClaimsClientFallback implements ClaimsClient {
     public Map<String, Long> getClaimCounts(String userRole) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
+
+    @Override
+    public Map<String, Double> getPayouts(String userRole) {
+        throw new ServiceUnavailableException(SERVICE_NAME);
+    }
 }

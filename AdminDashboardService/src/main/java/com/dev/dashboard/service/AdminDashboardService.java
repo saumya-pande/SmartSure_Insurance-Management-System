@@ -41,8 +41,13 @@ public class AdminDashboardService {
         Map<String, Long> userCounts   = authClient.getUserCounts(ADMIN_ROLE);
         Map<String, Long> kycCounts    = authClient.getKycCounts(ADMIN_ROLE);
         Map<String, Long> policyCounts = policyClient.getPolicyCounts(ADMIN_ROLE);
-        Map<String, Double> revenue    = policyClient.getRevenue(ADMIN_ROLE);
+        Map<String, Double> policyRevenue = policyClient.getRevenue(ADMIN_ROLE);
         Map<String, Long> claimCounts  = claimsClient.getClaimCounts(ADMIN_ROLE);
+        Map<String, Double> claimPayouts = claimsClient.getPayouts(ADMIN_ROLE);
+
+        Double grossRevenue = policyRevenue.getOrDefault("total", 0.0);
+        Double totalPayouts = claimPayouts.getOrDefault("total", 0.0);
+        Double netRevenue = grossRevenue - totalPayouts;
 
         return DashboardResponse.builder()
                 // users
@@ -65,7 +70,7 @@ public class AdminDashboardService {
                         "HOME", policyCounts.getOrDefault("HOME", 0L),
                         "VEHICLE", policyCounts.getOrDefault("VEHICLE", 0L)
                 ))
-                .totalRevenue(revenue.getOrDefault("total", 0.0))
+                .totalRevenue(netRevenue)
                 // claims
                 .totalClaims(claimCounts.getOrDefault("total", 0L))
                 .claimsByStatus(Map.of(

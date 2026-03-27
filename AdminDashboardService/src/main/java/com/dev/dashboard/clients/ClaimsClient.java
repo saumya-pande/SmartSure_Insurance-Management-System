@@ -13,7 +13,7 @@ import java.util.Map;
 @FeignClient(name = "CLAIMS-SERVICE", fallback = ClaimsClientFallback.class)
 public interface ClaimsClient {
 
-    @GetMapping("/api/admin/claims")
+    @GetMapping("/api/claims")
     Page<ClaimResponse> getClaims(
             @RequestParam(name = "status", required = false) ClaimStatus status,
             @RequestParam(name = "email", required = false) String email,
@@ -24,13 +24,16 @@ public interface ClaimsClient {
             @RequestHeader("X-User-Role") String userRole
     );
 
-    @PatchMapping("/api/admin/claims/{id}/status")
+    @PatchMapping("/api/claims/{id}/status")
     ClaimResponse overrideClaimStatus(
             @PathVariable(name = "id") Long id,
             @RequestParam(name = "status") ClaimStatus status,
             @RequestHeader("X-User-Role") String userRole
     );
 
-    @GetMapping("/api/admin/claims/count")
+    @GetMapping("/api/claims/count")
     Map<String, Long> getClaimCounts(@RequestHeader("X-User-Role") String userRole);
+
+    @GetMapping("/api/claims/payouts")
+    Map<String, Double> getPayouts(@RequestHeader("X-User-Role") String userRole);
 }

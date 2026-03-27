@@ -43,4 +43,15 @@ public class NotificationListener {
         // Simple log for now, as requested.
         log.info("Admin Action Detected: New Policy Type Created! Details: {}", payload);
     }
+
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_CLAIM_STATUS_UPDATED)
+    public void consumeClaimStatusUpdatedEvent(Map<String, Object> payload) {
+        String email = (String) payload.get("email");
+        Long claimId = Long.valueOf(payload.get("claimId").toString());
+        String status = (String) payload.get("status");
+        Double amount = Double.valueOf(payload.get("amount").toString());
+
+        log.info("Received Claim Status Updated Event for Claim ID: {}. Status: {}", claimId, status);
+        emailService.sendClaimStatusEmail(email, claimId, status, amount);
+    }
 }

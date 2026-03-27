@@ -57,6 +57,10 @@ public class ClaimService {
             throw new InvalidOperationException("Policy is not active");
         }
 
+        if (claimRepo.existsByCustomerPolicyIdAndStatusNot(request.getCustomerPolicyId(), ClaimStatus.REJECTED)) {
+            throw new InvalidOperationException("A claim for this policy has already been submitted and is active.");
+        }
+
         // save documents
         List<ClaimDocument> documents = saveDocuments(files);
 
@@ -99,48 +103,40 @@ public class ClaimService {
         return mapper.toResponse(claimRepo.save(claim));
     }
 
-    // ADMIN — move to UNDER_REVIEW
-    public ClaimResponse startReview(Long claimId) {
-        Claim claim = claimRepo.findById(claimId)
-                .orElseThrow(() -> new EntityNotFoundException("Claim", "id", claimId));
-
-        if (claim.getStatus() != ClaimStatus.SUBMITTED) {
-            throw new InvalidOperationException("Only SUBMITTED claims can be reviewed");
-        }
-
-        claim.setStatus(ClaimStatus.UNDER_REVIEW);
-        return mapper.toResponse(claimRepo.save(claim));
-    }
-
-    // ADMIN — approve or reject
+    // ADMIN — handle all status transitions
     public ClaimResponse updateStatus(Long claimId, ClaimStatus status) {
         Claim claim = claimRepo.findById(claimId)
                 .orElseThrow(() -> new EntityNotFoundException("Claim", "id", claimId));
 
-        if (claim.getStatus() != ClaimStatus.UNDER_REVIEW) {
-            throw new InvalidOperationException("Claim must be UNDER_REVIEW to approve or reject");
-        }
-
-        if (status != ClaimStatus.APPROVED && status != ClaimStatus.REJECTED) {
-            throw new InvalidOperationException("Status must be APPROVED or REJECTED");
+        if (status == ClaimStatus.UNDER_REVIEW) {
+            if (claim.getStatus() != ClaimStatus.SUBMITTED) {
+                throw new InvalidOperationException("Only SUBMITTED claims can be reviewed");
+            }
+        } else if (status == ClaimStatus.APPROVED || status == ClaimStatus.REJECTED) {
+            if (claim.getStatus() != ClaimStatus.UNDER_REVIEW) {
+                throw new InvalidOperationException("Claim must be UNDER_REVIEW to approve or reject");
+            }
+        } else if (status == ClaimStatus.CLOSED) {
+            if (claim.getStatus() != ClaimStatus.APPROVED && claim.getStatus() != ClaimStatus.REJECTED) {
+                throw new InvalidOperationException("Only APPROVED or REJECTED claims can be closed");
+            }
+        } else {
+            throw new InvalidOperationException("Invalid target status for admin update");
         }
 
         claim.setStatus(status);
-        return mapper.toResponse(claimRepo.save(claim));
-    }
+        Claim saved = claimRepo.save(claim);
 
-    // ADMIN — close a claim
-    public ClaimResponse close(Long claimId) {
-        Claim claim = claimRepo.findById(claimId)
-                .orElseThrow(() -> new EntityNotFoundException("Claim", "id", claimId));
-
-        if (claim.getStatus() != ClaimStatus.APPROVED &&
-            claim.getStatus() != ClaimStatus.REJECTED) {
-            throw new InvalidOperationException("Only APPROVED or REJECTED claims can be closed");
+        if (status == ClaimStatus.APPROVED || status == ClaimStatus.REJECTED) {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("email", saved.getCustomerEmail());
+            payload.put("claimId", saved.getId());
+            payload.put("status", status.name());
+            payload.put("amount", saved.getClaimAmount());
+            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_CLAIM_STATUS_UPDATED, payload);
         }
 
-        claim.setStatus(ClaimStatus.CLOSED);
-        return mapper.toResponse(claimRepo.save(claim));
+        return mapper.toResponse(saved);
     }
 
     // CUSTOMER — get their own claims
@@ -148,9 +144,28 @@ public class ClaimService {
         return claimRepo.findByCustomerEmail(email, pageable).map(mapper::toResponse);
     }
 
-    // ADMIN — get all claims
-    public Page<ClaimResponse> getAll(Pageable pageable) {
+    // ADMIN — get all claims filters
+    public Page<ClaimResponse> getAll(ClaimStatus status, Pageable pageable) {
+        if (status != null) {
+            return claimRepo.findByStatus(status, pageable).map(mapper::toResponse);
+        }
         return claimRepo.findAll(pageable).map(mapper::toResponse);
+    }
+
+    // ADMIN — metrics
+    public Map<String, Long> getClaimCounts() {
+        Map<String, Long> counts = new HashMap<>();
+        counts.put("total", claimRepo.count());
+        for (ClaimStatus status : ClaimStatus.values()) {
+            counts.put(status.name(), claimRepo.countByStatus(status));
+        }
+        return counts;
+    }
+
+    // ADMIN — payouts
+    public Map<String, Double> getApprovedPayouts() {
+        Double total = claimRepo.sumClaimAmountByStatus(ClaimStatus.APPROVED);
+        return Map.of("total", total != null ? total : 0.0);
     }
 
     // ── helpers ──────────────────────────────────────────────

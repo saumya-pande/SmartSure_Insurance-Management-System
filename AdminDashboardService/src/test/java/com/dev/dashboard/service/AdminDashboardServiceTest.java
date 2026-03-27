@@ -48,6 +48,7 @@ class AdminDashboardServiceTest {
         when(policyClient.getPolicyCounts(anyString())).thenReturn(Collections.emptyMap());
         when(policyClient.getRevenue(anyString())).thenReturn(Collections.emptyMap());
         when(claimsClient.getClaimCounts(anyString())).thenReturn(Collections.emptyMap());
+        when(claimsClient.getPayouts(anyString())).thenReturn(Collections.emptyMap());
 
         DashboardResponse response = adminService.getDashboard();
 

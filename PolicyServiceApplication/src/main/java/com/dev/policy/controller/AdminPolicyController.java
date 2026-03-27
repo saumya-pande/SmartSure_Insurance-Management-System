@@ -25,10 +25,12 @@ import com.dev.policy.service.CustomerPolicyService;
 
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminPolicyController {
 
     private final BasicPolicyService basicPolicyService;
@@ -57,42 +59,42 @@ public class AdminPolicyController {
 
     @PostMapping("/policies")
     public ResponseEntity<BasicPolicyResponse> create(
-            @RequestBody BasicPolicyRequest r) {
+            @org.springframework.web.bind.annotation.RequestBody BasicPolicyRequest r) {
         return ResponseEntity.ok(basicPolicyService.create(r));
     }
 
     @PutMapping("/policies/{id}")
     public ResponseEntity<BasicPolicyResponse> update(
-            @PathVariable Long id, @RequestBody BasicPolicyRequest r) {
+            @PathVariable(name = "id") Long id, @org.springframework.web.bind.annotation.RequestBody BasicPolicyRequest r) {
         return ResponseEntity.ok(basicPolicyService.update(id, r));
     }
 
     @DeleteMapping("/policies/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable(name = "id") Long id) {
         basicPolicyService.delete(id);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/policies/{id}/status")
     public ResponseEntity<BasicPolicyResponse> updateStatus(
-            @PathVariable Long id, @RequestBody PolicyStatus status) {
+            @PathVariable(name = "id") Long id, @RequestParam(name = "status") PolicyStatus status) {
         return ResponseEntity.ok(basicPolicyService.updateStatus(id, status));
     }
 
     @GetMapping("/policies")
     public ResponseEntity<Page<BasicPolicyResponse>> getAll(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy) {
         return ResponseEntity.ok(
                 basicPolicyService.getAll(PageRequest.of(page, size, Sort.by(sortBy))));
     }
 
     @GetMapping("/policies/purchased")
     public ResponseEntity<Page<CustomerPolicyResponse>> getPurchased(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy) {
         return ResponseEntity.ok(
                 customerPolicyService.getAll(PageRequest.of(page, size, Sort.by(sortBy))));
     }

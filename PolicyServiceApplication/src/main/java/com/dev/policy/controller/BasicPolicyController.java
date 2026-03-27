@@ -30,7 +30,7 @@ public class BasicPolicyController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     @Operation(summary = "Update a policy (admin)")
-    public ResponseEntity<BasicPolicyResponse> update(@PathVariable Long id,
+    public ResponseEntity<BasicPolicyResponse> update(@PathVariable(name = "id") Long id,
             @Valid @RequestBody BasicPolicyRequest request) {
         return ResponseEntity.ok(service.update(id, request));
     }
@@ -38,7 +38,7 @@ public class BasicPolicyController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a policy (admin)")
-    public ResponseEntity<String> delete(@PathVariable Long id) {
+    public ResponseEntity<String> delete(@PathVariable(name = "id") Long id) {
         service.delete(id);
         return ResponseEntity.ok("Policy deleted");
     }
@@ -46,8 +46,8 @@ public class BasicPolicyController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update policy status (admin)")
-    public ResponseEntity<BasicPolicyResponse> updateStatus(@PathVariable Long id,
-            @RequestParam PolicyStatus status) {
+    public ResponseEntity<BasicPolicyResponse> updateStatus(@PathVariable(name = "id") Long id,
+            @RequestParam(name = "status") PolicyStatus status) {
         return ResponseEntity.ok(service.updateStatus(id, status));
     }
 
@@ -55,8 +55,8 @@ public class BasicPolicyController {
     @GetMapping("/all")
     @Operation(summary = "Get all policies (admin)")
     public ResponseEntity<Page<BasicPolicyResponse>> getAll(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         return ResponseEntity.ok(service.getAll(PageRequest.of(page, size, Sort.by("id"))));
     }
 
@@ -65,14 +65,14 @@ public class BasicPolicyController {
     @GetMapping
     @Operation(summary = "Get active policies (customer)")
     public ResponseEntity<Page<BasicPolicyResponse>> getActive(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         return ResponseEntity.ok(service.getActive(PageRequest.of(page, size, Sort.by("id"))));
     }
     
     @GetMapping("/{id}")
     @Operation(summary = "Get policy by id")
-    public ResponseEntity<BasicPolicyResponse> getById(@PathVariable Long id) {
+    public ResponseEntity<BasicPolicyResponse> getById(@PathVariable(name = "id") Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
 }

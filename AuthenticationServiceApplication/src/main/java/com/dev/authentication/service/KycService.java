@@ -9,6 +9,7 @@ import com.dev.authentication.dto.KycResponse;
 import com.dev.authentication.entity.Kyc;
 import com.dev.authentication.entity.KycStatus;
 import com.dev.authentication.entity.User;
+import com.dev.authentication.exception.DuplicateResourceException;
 import com.dev.authentication.exception.EntityNotFoundException;
 import com.dev.authentication.mapper.KycMapper;
 import com.dev.authentication.repository.KycRepository;
@@ -34,6 +35,11 @@ public class KycService {
     public void upload(String email, KycRequest request, MultipartFile file) throws Exception {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("User", "email", email));
+
+        // Check if user already has a KYC submission
+        if (repo.findByUserId(user.getId()).isPresent()) {
+            throw new DuplicateResourceException("KYC", "user", email);
+        }
 
         Path uploadPath = Paths.get(UPLOAD_DIR);
         if (!Files.exists(uploadPath)) {

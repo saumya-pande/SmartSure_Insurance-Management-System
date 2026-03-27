@@ -62,6 +62,13 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Invalid Field Value", ex.getMessage(), req);
     }
 
+    // ── 400 Bad Request — invalid operation ──────────────────────────────
+    @ExceptionHandler(InvalidOperationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOperation(
+            InvalidOperationException ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "Invalid Operation", ex.getMessage(), req);
+    }
+
     // ── 400 Bad Request — @Valid annotation failures ─────────────────────
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(

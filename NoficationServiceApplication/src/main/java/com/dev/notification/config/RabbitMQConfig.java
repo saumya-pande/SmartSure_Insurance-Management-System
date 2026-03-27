@@ -18,11 +18,13 @@ public class RabbitMQConfig {
     public static final String QUEUE_USER_REGISTERED = "email.user.registered.queue";
     public static final String QUEUE_POLICY_PURCHASED = "email.policy.purchased.queue";
     public static final String QUEUE_POLICY_TYPE_CREATED = "log.policy.type.created.queue";
+    public static final String QUEUE_CLAIM_STATUS_UPDATED = "email.claim.status.updated.queue";
 
     // Routing Keys
     public static final String ROUTING_KEY_REGISTER = "user.registered";
     public static final String ROUTING_KEY_PURCHASED = "policy.purchased";
     public static final String ROUTING_KEY_CREATED = "policy.type.created";
+    public static final String ROUTING_KEY_CLAIM_STATUS_UPDATED = "claim.status.updated";
 
     @Bean
     public TopicExchange exchange() {
@@ -45,6 +47,11 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue claimStatusUpdatedQueue() {
+        return new Queue(QUEUE_CLAIM_STATUS_UPDATED, true);
+    }
+
+    @Bean
     public Binding bindingUserRegistered(@org.springframework.beans.factory.annotation.Qualifier("userRegisteredQueue") Queue queue, TopicExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY_REGISTER);
     }
@@ -57,6 +64,11 @@ public class RabbitMQConfig {
     @Bean
     public Binding bindingPolicyTypeCreated(@org.springframework.beans.factory.annotation.Qualifier("policyTypeCreatedQueue") Queue queue, TopicExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY_CREATED);
+    }
+
+    @Bean
+    public Binding bindingClaimStatusUpdated(@org.springframework.beans.factory.annotation.Qualifier("claimStatusUpdatedQueue") Queue queue, TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY_CLAIM_STATUS_UPDATED);
     }
 
     @Bean

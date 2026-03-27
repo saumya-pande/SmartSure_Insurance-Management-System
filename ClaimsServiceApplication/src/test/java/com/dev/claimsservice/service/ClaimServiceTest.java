@@ -135,7 +135,7 @@ class ClaimServiceTest {
         when(claimRepo.findById(10L)).thenReturn(Optional.of(claim));
         when(claimRepo.save(any(Claim.class))).thenReturn(claim);
 
-        claimService.startReview(10L);
+        claimService.updateStatus(10L, ClaimStatus.UNDER_REVIEW);
 
         assertEquals(ClaimStatus.UNDER_REVIEW, claim.getStatus());
     }
@@ -163,7 +163,7 @@ class ClaimServiceTest {
         when(claimRepo.findById(10L)).thenReturn(Optional.of(claim));
         when(claimRepo.save(any(Claim.class))).thenReturn(claim);
 
-        claimService.close(10L);
+        claimService.updateStatus(10L, ClaimStatus.CLOSED);
 
         assertEquals(ClaimStatus.CLOSED, claim.getStatus());
     }

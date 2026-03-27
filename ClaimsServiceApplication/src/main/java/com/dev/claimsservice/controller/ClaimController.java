@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/claims")
@@ -27,8 +28,8 @@ public class ClaimController {
     @Operation(summary = "Create a draft claim with documents")
     public ResponseEntity<ClaimResponse> createDraft(
             @Parameter(hidden = true) @RequestHeader("X-User-Email") String email,
-            @RequestParam Long customerPolicyId,
-            @RequestParam Double claimAmount,
+            @RequestParam(name = "customerPolicyId") Long customerPolicyId,
+            @RequestParam(name = "claimAmount") Double claimAmount,
             @RequestPart("files") List<MultipartFile> files
     ) throws Exception {
         ClaimRequest request = new ClaimRequest();
@@ -43,7 +44,7 @@ public class ClaimController {
     @Operation(summary = "Submit a draft claim")
     public ResponseEntity<ClaimResponse> submit(
             @Parameter(hidden = true) @RequestHeader("X-User-Email") String email,
-            @PathVariable Long id
+            @PathVariable(name = "id") Long id
     ) {
         return ResponseEntity.ok(service.submit(email, id));
     }
@@ -54,49 +55,51 @@ public class ClaimController {
     @Operation(summary = "Get my claims")
     public ResponseEntity<Page<ClaimResponse>> getMyClaims(
             @Parameter(hidden = true) @RequestHeader("X-User-Email") String email,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(service.getMyClaims(email,
                 PageRequest.of(page, size, Sort.by("createdAt").descending())));
     }
 
-    // ADMIN — start review
-    @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{id}/review")
-    @Operation(summary = "Move claim to UNDER_REVIEW (admin)")
-    public ResponseEntity<ClaimResponse> startReview(@PathVariable Long id) {
-        return ResponseEntity.ok(service.startReview(id));
-    }
-
-    // ADMIN — approve or reject
+    // ADMIN — approve or reject or review or close
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Approve or Reject a claim (admin)")
+    @Operation(summary = "Update claim status (admin)")
     public ResponseEntity<ClaimResponse> updateStatus(
-            @PathVariable Long id,
-            @RequestParam ClaimStatus status
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "status") ClaimStatus status
     ) {
         return ResponseEntity.ok(service.updateStatus(id, status));
-    }
-
-    // ADMIN — close claim
-    @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{id}/close")
-    @Operation(summary = "Close a claim (admin)")
-    public ResponseEntity<ClaimResponse> close(@PathVariable Long id) {
-        return ResponseEntity.ok(service.close(id));
     }
 
     // ADMIN — get all claims
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    @Operation(summary = "Get all claims (admin)")
+    @Operation(summary = "Get all claims (admin) with optional status filter")
     public ResponseEntity<Page<ClaimResponse>> getAll(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(name = "status", required = false) ClaimStatus status,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(service.getAll(
+                status,
                 PageRequest.of(page, size, Sort.by("createdAt").descending())));
+    }
+
+    // ADMIN — get claim counts
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/count")
+    @Operation(summary = "Get claim counts by status (admin)")
+    public ResponseEntity<Map<String, Long>> getClaimCounts() {
+        return ResponseEntity.ok(service.getClaimCounts());
+    }
+
+    // ADMIN — get total approved payouts
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/payouts")
+    @Operation(summary = "Get total approved claim payouts (admin)")
+    public ResponseEntity<Map<String, Double>> getApprovedPayouts() {
+        return ResponseEntity.ok(service.getApprovedPayouts());
     }
 }

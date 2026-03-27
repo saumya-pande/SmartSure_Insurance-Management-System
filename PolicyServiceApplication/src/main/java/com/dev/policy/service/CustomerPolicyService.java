@@ -1,13 +1,18 @@
 package com.dev.policy.service;
 
+import com.dev.policy.client.KycClient;
+import com.dev.policy.client.KycResponse;
+import com.dev.policy.config.RabbitMQConfig;
 import com.dev.policy.dto.*;
 import com.dev.policy.entity.*;
 import com.dev.policy.exception.*;
 import com.dev.policy.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -16,10 +21,28 @@ public class CustomerPolicyService {
 
     private final CustomerPolicyRepository repo;
     private final BasicPolicyRepository basicPolicyRepo;
+    private final KycClient kycClient;
+    private final RabbitTemplate rabbitTemplate;
 
-    public CustomerPolicyResponse purchase(String email, PurchasePolicyRequest request) {
+    public CustomerPolicyResponse purchase(String email, String role, PurchasePolicyRequest request) {
 
-        // null checks
+        // ── KYC verification ──────────────────────────────────────
+        try {
+            KycResponse kyc = kycClient.getMyKyc(email, role);
+            if (!"APPROVED".equalsIgnoreCase(kyc.getStatus())) {
+                throw new InvalidOperationException(
+                        "KYC is not approved. Current status: " + kyc.getStatus() +
+                        ". Please wait for admin approval before purchasing a policy.");
+            }
+        } catch (feign.FeignException.NotFound e) {
+            throw new InvalidOperationException(
+                    "No KYC found for your account. Please upload your KYC documents first.");
+        } catch (feign.FeignException.Forbidden e) {
+            throw new InvalidOperationException(
+                    "Access Denied during KYC check. Ensure you are logged in as a CUSTOMER.");
+        }
+
+        // ── field validation ──────────────────────────────────────
         if (request.getBasicPolicyId() == null)
             throw new MissingRequiredFieldException("basicPolicyId");
         if (request.getPropertyIdentifier() == null || request.getPropertyIdentifier().isBlank())
@@ -55,11 +78,28 @@ public class CustomerPolicyService {
                 .basicPolicy(basic)
                 .build();
 
-        return toResponse(repo.save(cp));
+        CustomerPolicy saved = repo.save(cp);
+
+        // ── publish purchase event for email notification ─────────
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("email", email);
+        payload.put("policyId", saved.getId());
+        payload.put("policyName", basic.getPolicyName());
+        payload.put("amount", saved.getPremiumAmount());
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EXCHANGE_NAME,
+                RabbitMQConfig.ROUTING_KEY_PURCHASED,
+                payload);
+
+        return toResponse(saved);
     }
 
     public Page<CustomerPolicyResponse> getMyPolicies(String email, Pageable pageable) {
-        return repo.findByCustomerEmail(email, pageable).map(this::toResponse);
+        Page<CustomerPolicy> page = repo.findByCustomerEmail(email, pageable);
+        if (page.isEmpty()) {
+            throw new PolicyNotFoundException("No policies purchased");
+        }
+        return page.map(this::toResponse);
     }
 
     public Page<CustomerPolicyResponse> getAll(Pageable pageable) {

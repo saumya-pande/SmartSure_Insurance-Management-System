@@ -1,5 +1,4 @@
-package com.dev.claimsservice.config;
-
+package com.dev.policy.config;
 
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -11,8 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
 
     public static final String EXCHANGE_NAME = "smartsure.topic.exchange";
-    public static final String ROUTING_KEY_CLAIM_SUBMITTED = "claim.submitted";
-    public static final String ROUTING_KEY_CLAIM_STATUS_UPDATED = "claim.status.updated";
+    public static final String ROUTING_KEY_PURCHASED = "policy.purchased";
 
     @Bean
     public TopicExchange exchange() {

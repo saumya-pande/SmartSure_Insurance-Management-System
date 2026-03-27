@@ -80,14 +80,15 @@ class ClaimControllerTest {
     }
 
     @Test
-    void admin_startReview_success() throws Exception {
+    void admin_updateStatus_review_success() throws Exception {
         ClaimResponse response = new ClaimResponse();
         response.setId(10L);
         response.setStatus(ClaimStatus.UNDER_REVIEW);
 
-        when(claimService.startReview(10L)).thenReturn(response);
+        when(claimService.updateStatus(10L, ClaimStatus.UNDER_REVIEW)).thenReturn(response);
 
-        mockMvc.perform(patch("/api/claims/10/review")
+        mockMvc.perform(patch("/api/claims/10/status")
+                .param("status", "UNDER_REVIEW")
                 .header("X-User-Email", "admin@example.com")
                 .header("X-User-Role", "ROLE_ADMIN"))
                 .andExpect(status().isOk())
@@ -96,7 +97,8 @@ class ClaimControllerTest {
 
     @Test
     void admin_forbidden_for_customer() throws Exception {
-        mockMvc.perform(patch("/api/claims/10/review")
+        mockMvc.perform(patch("/api/claims/10/status")
+                .param("status", "UNDER_REVIEW")
                 .header("X-User-Email", "customer@example.com")
                 .header("X-User-Role", "ROLE_CUSTOMER"))
                 .andExpect(status().isForbidden());
