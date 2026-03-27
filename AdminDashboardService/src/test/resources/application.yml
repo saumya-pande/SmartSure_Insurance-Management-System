@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: admin-service
+  cloud:
+    config:
+      enabled: false

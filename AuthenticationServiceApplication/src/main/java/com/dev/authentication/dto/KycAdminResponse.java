@@ -11,7 +11,7 @@ public class KycAdminResponse {
     private Long id;
     private String contactNumber;
     private String documentType;
-    private String documentPath; // ✅ admin only
+    private String documentPath;
     private String address;
     private KycStatus status;
     private String userEmail;

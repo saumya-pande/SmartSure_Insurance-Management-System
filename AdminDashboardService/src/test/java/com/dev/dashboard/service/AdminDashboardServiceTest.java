@@ -3,9 +3,9 @@ package com.dev.dashboard.service;
 import com.dev.dashboard.clients.AuthClient;
 import com.dev.dashboard.clients.ClaimsClient;
 import com.dev.dashboard.clients.PolicyClient;
-import com.dev.dashboard.dto.DashboardResponse;
-import com.dev.dashboard.dto.UserResponse;
-import org.junit.jupiter.api.AfterEach;
+import com.dev.dashboard.dto.*;
+import com.dev.dashboard.entity.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,13 +14,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,78 +26,108 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AdminDashboardServiceTest {
+public class AdminDashboardServiceTest {
 
     @Mock
     private AuthClient authClient;
+
     @Mock
     private PolicyClient policyClient;
+
     @Mock
     private ClaimsClient claimsClient;
 
     @InjectMocks
-    private AdminDashboardService adminService;
+    private AdminDashboardService adminDashboardService;
+
+    private static final String ADMIN_ROLE = "ROLE_ADMIN";
+    private static final String ADMIN_EMAIL = "admin@test.com";
 
     @BeforeEach
-    void setUpSecurityContext() {
-        var auth = new UsernamePasswordAuthenticationToken(
-                "admin@example.com", null,
-                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
-        SecurityContextHolder.getContext().setAuthentication(auth);
-    }
-
-    @AfterEach
-    void clearSecurityContext() {
-        SecurityContextHolder.clearContext();
+    void setUp() {
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn(ADMIN_EMAIL);
+        SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
-    void getDashboard_success() {
-        Map<String, Long> userCounts = new HashMap<>();
-        userCounts.put("total", 100L);
-        userCounts.put("active", 80L);
+    void testGetDashboard() {
+        when(authClient.getUserCounts(eq(ADMIN_ROLE), eq(ADMIN_EMAIL))).thenReturn(Map.of("total", 100L));
+        when(authClient.getKycCounts(eq(ADMIN_ROLE), eq(ADMIN_EMAIL))).thenReturn(Map.of("total", 50L));
+        when(policyClient.getPolicyCounts(eq(ADMIN_ROLE), eq(ADMIN_EMAIL))).thenReturn(Map.of("total", 200L));
+        when(policyClient.getRevenue(eq(ADMIN_ROLE), eq(ADMIN_EMAIL))).thenReturn(Map.of("total", 50000.0));
+        when(claimsClient.getClaimCounts(eq(ADMIN_ROLE), eq(ADMIN_EMAIL))).thenReturn(Map.of("total", 10L));
+        when(claimsClient.getPayouts(eq(ADMIN_ROLE), eq(ADMIN_EMAIL))).thenReturn(Map.of("total", 5000.0));
 
-        Map<String, Long> kycCounts = new HashMap<>();
-        kycCounts.put("PENDING", 5L);
-
-        when(authClient.getUserCounts(anyString(), anyString())).thenReturn(userCounts);
-        when(authClient.getKycCounts(anyString(), anyString())).thenReturn(kycCounts);
-        when(policyClient.getPolicyCounts(anyString(), anyString())).thenReturn(Collections.emptyMap());
-        when(policyClient.getRevenue(anyString(), anyString())).thenReturn(Collections.emptyMap());
-        when(claimsClient.getClaimCounts(anyString(), anyString())).thenReturn(Collections.emptyMap());
-        when(claimsClient.getPayouts(anyString(), anyString())).thenReturn(Collections.emptyMap());
-
-        DashboardResponse response = adminService.getDashboard();
+        DashboardResponse response = adminDashboardService.getDashboard();
 
         assertNotNull(response);
         assertEquals(100L, response.getTotalUsers());
-        assertEquals(80L, response.getActiveUsers());
-        assertEquals(5L, response.getPendingKyc());
+        assertEquals(50L, response.getTotalKyc());
+        assertEquals(200L, response.getTotalBasicPolicies());
+        assertEquals(45000.0, response.getTotalRevenue());
+        assertEquals(10L, response.getTotalClaims());
     }
 
     @Test
-    void getUsers_success() {
-        Page<UserResponse> page = new PageImpl<>(Collections.emptyList());
-        when(authClient.getUsers(any(), any(), any(), any(), anyInt(), anyInt(), anyString(), anyString()))
-                .thenReturn(page);
+    void testGetUsers() {
+        Page<UserResponse> mockPage = new PageImpl<>(Collections.singletonList(new UserResponse()));
+        when(authClient.getUsers(any(), any(), any(), any(), anyInt(), anyInt(), eq(ADMIN_ROLE), eq(ADMIN_EMAIL)))
+                .thenReturn(mockPage);
 
-        Page<UserResponse> result = adminService.getUsers(null, null, null, null, 0, 10);
-
+        Page<UserResponse> result = adminDashboardService.getUsers(null, null, null, null, 0, 10);
         assertNotNull(result);
-        assertTrue(result.getContent().isEmpty());
+        assertEquals(1, result.getTotalElements());
     }
 
     @Test
-    void toggleUserStatus_success() {
-        UserResponse user = new UserResponse();
-        user.setId(1L);
-        user.setActive(false);
+    void testToggleUserStatus() {
+        UserResponse mockRes = new UserResponse();
+        mockRes.setActive(false);
+        when(authClient.toggleUserStatus(1L, false, ADMIN_ROLE, ADMIN_EMAIL)).thenReturn(mockRes);
 
-        when(authClient.toggleUserStatus(eq(1L), eq(false), anyString(), anyString())).thenReturn(user);
-
-        UserResponse result = adminService.toggleUserStatus(1L, false);
-
+        UserResponse result = adminDashboardService.toggleUserStatus(1L, false);
         assertNotNull(result);
         assertFalse(result.isActive());
+    }
+
+    @Test
+    void testGetKyc() {
+        Page<KycResponse> mockPage = new PageImpl<>(Collections.singletonList(new KycResponse()));
+        when(authClient.getKyc(any(), any(), anyInt(), anyInt(), eq(ADMIN_ROLE), eq(ADMIN_EMAIL)))
+                .thenReturn(mockPage);
+
+        Page<KycResponse> result = adminDashboardService.getKyc(null, null, 0, 10);
+        assertNotNull(result);
+    }
+
+    @Test
+    void testUpdateKycStatus() {
+        KycResponse mockRes = new KycResponse();
+        mockRes.setStatus(KycStatus.APPROVED);
+        when(authClient.updateKycStatus(1L, KycStatus.APPROVED, ADMIN_ROLE, ADMIN_EMAIL)).thenReturn(mockRes);
+
+        KycResponse result = adminDashboardService.updateKycStatus(1L, KycStatus.APPROVED);
+        assertNotNull(result);
+        assertEquals(KycStatus.APPROVED, result.getStatus());
+    }
+
+    @Test
+    void testCreatePolicy() {
+        BasicPolicyRequest req = new BasicPolicyRequest();
+        BasicPolicyResponse res = new BasicPolicyResponse();
+        when(policyClient.createPolicy(req, ADMIN_ROLE, ADMIN_EMAIL)).thenReturn(res);
+
+        BasicPolicyResponse result = adminDashboardService.createPolicy(req);
+        assertNotNull(result);
+    }
+
+    @Test
+    void testDeletePolicy() {
+        doNothing().when(policyClient).deletePolicy(1L, ADMIN_ROLE, ADMIN_EMAIL);
+        adminDashboardService.deletePolicy(1L);
+        verify(policyClient).deletePolicy(1L, ADMIN_ROLE, ADMIN_EMAIL);
     }
 }
