@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ClaimController.class)
+@WebMvcTest(controllers = ClaimController.class, properties = {"spring.cloud.config.enabled=false", "spring.config.import="})
 @Import({SecurityConfig.class, HeaderAuthFilter.class})
 class ClaimControllerTest {
 

@@ -35,11 +35,9 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
             // PUBLIC endpoints
-        		.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/validate").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/validate").permitAll()
         	    .requestMatchers("/api/auth/logout").authenticated() 
             .requestMatchers(
-            		"/api/auth/**",
-            	    "/api/kyc/**",
             	    "/v3/api-docs/**",
             	    "/v3/api-docs/swagger-config",
             	    "/swagger-ui/**",
@@ -47,7 +45,6 @@ public class SecurityConfig {
             	    "/webjars/**",
             	    "/actuator/**"
             ).permitAll()
-            .requestMatchers("/api/auth/**").permitAll()
 
             // EVERYTHING ELSE → secured
             .anyRequest().authenticated()

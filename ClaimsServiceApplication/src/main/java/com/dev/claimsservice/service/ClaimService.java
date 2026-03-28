@@ -11,7 +11,6 @@ import com.dev.claimsservice.repository.*;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -27,8 +26,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ClaimService {
 	
-	 @Autowired
-	private RabbitTemplate rabbitTemplate;
+	private final RabbitTemplate rabbitTemplate;
     private final ClaimRepository claimRepo;
     private final ClaimDocumentRepository docRepo;
     private final PolicyClient policyClient;

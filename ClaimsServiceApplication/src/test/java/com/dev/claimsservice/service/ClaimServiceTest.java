@@ -76,6 +76,13 @@ class ClaimServiceTest {
             c.setId(10L);
             return c;
         });
+        when(mapper.toResponse(any(Claim.class))).thenAnswer(i -> {
+            Claim c = i.getArgument(0);
+            ClaimResponse res = new ClaimResponse();
+            res.setId(c.getId());
+            res.setStatus(c.getStatus());
+            return res;
+        });
 
         ClaimResponse response = claimService.createDraft(customerEmail, claimRequest, files);
         
@@ -105,6 +112,7 @@ class ClaimServiceTest {
 
         when(claimRepo.findById(10L)).thenReturn(Optional.of(claim));
         when(claimRepo.save(any(Claim.class))).thenReturn(claim);
+        when(mapper.toResponse(any(Claim.class))).thenReturn(new ClaimResponse());
 
         claimService.submit(customerEmail, 10L);
 
@@ -134,6 +142,7 @@ class ClaimServiceTest {
 
         when(claimRepo.findById(10L)).thenReturn(Optional.of(claim));
         when(claimRepo.save(any(Claim.class))).thenReturn(claim);
+        when(mapper.toResponse(any(Claim.class))).thenReturn(new ClaimResponse());
 
         claimService.updateStatus(10L, ClaimStatus.UNDER_REVIEW);
 
@@ -148,6 +157,7 @@ class ClaimServiceTest {
 
         when(claimRepo.findById(10L)).thenReturn(Optional.of(claim));
         when(claimRepo.save(any(Claim.class))).thenReturn(claim);
+        when(mapper.toResponse(any(Claim.class))).thenReturn(new ClaimResponse());
 
         claimService.updateStatus(10L, ClaimStatus.APPROVED);
 
@@ -162,6 +172,7 @@ class ClaimServiceTest {
 
         when(claimRepo.findById(10L)).thenReturn(Optional.of(claim));
         when(claimRepo.save(any(Claim.class))).thenReturn(claim);
+        when(mapper.toResponse(any(Claim.class))).thenReturn(new ClaimResponse());
 
         claimService.updateStatus(10L, ClaimStatus.CLOSED);
 

@@ -4,9 +4,7 @@ package com.dev.authentication.service;
 import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +18,7 @@ import com.dev.authentication.dto.RegisterRequest;
 import com.dev.authentication.entity.Role;
 import com.dev.authentication.entity.User;
 import com.dev.authentication.exception.DuplicateResourceException;
-import com.dev.authentication.exception.EntityNotFoundException;
+
 import com.dev.authentication.exception.InvalidOperationException;
 import com.dev.authentication.repository.UserRepository;
 import com.dev.authentication.security.JwtUtil;
@@ -34,6 +32,8 @@ public class AuthService {
     private final JwtUtil jwt;
     @Autowired
     private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
     public String register(RegisterRequest request) {
 
@@ -62,10 +62,10 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
 
         User user = repo.findByEmail(request.getEmail())
-                .orElseThrow(() -> new EntityNotFoundException("User", "email", request.getEmail()));
+                .orElseThrow(() -> new InvalidOperationException("User does not exist/wrong credentials"));
 
         if (!encoder.matches(request.getPassword(), user.getPassword())) {
-            throw new InvalidOperationException("Invalid credentials");
+            throw new InvalidOperationException("User does not exist/wrong credentials");
         }
 
         return generateTokens(user);
@@ -79,18 +79,16 @@ public class AuthService {
         );
     }
     
-    private final Set<String> revokedTokens = new HashSet<>();
-
     public String logout(String token) {
-        revokedTokens.add(token);
+        redisTemplate.opsForValue().set("revoked:" + token, "true", java.time.Duration.ofHours(24));
         return "Logged out successfully!";
-        }
+    }
 
     public boolean isRevoked(String token) {
-        return revokedTokens.contains(token);
+        return Boolean.TRUE.equals(redisTemplate.hasKey("revoked:" + token));
     }
     
     public boolean isTokenValid(String token) {
-        return !revokedTokens.contains(token);
+        return !isRevoked(token);
     }
 }

@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,13 +25,30 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
                path.startsWith("/webjars");
     }
 
+    @Autowired
+    private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
                                     throws ServletException, IOException {
+        String authHeader = request.getHeader("Authorization");
         String email = request.getHeader("X-User-Email");
         String role  = request.getHeader("X-User-Role");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+
+            // Check if token is blacklisted in Redis
+            Boolean isRevoked = redisTemplate.hasKey("revoked:" + token);
+            if (Boolean.TRUE.equals(isRevoked)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("please login to continue");
+                return;
+            }
+        }
+
 
         if (email != null && role != null) {
             var authorities = List.of(new SimpleGrantedAuthority(role));

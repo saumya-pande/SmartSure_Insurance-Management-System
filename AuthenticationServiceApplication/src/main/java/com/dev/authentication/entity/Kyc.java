@@ -1,6 +1,6 @@
 package com.dev.authentication.entity;
 
-import org.springframework.beans.factory.annotation.Value;
+
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
@@ -23,7 +23,6 @@ public class Kyc {
     
     private String documentType;
 
-    @Value("${file.upload-dir}")
     private String documentPath;  
 
     private String address;

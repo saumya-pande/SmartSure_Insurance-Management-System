@@ -1,0 +1,220 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: smartsure_auth
+    ports:
+      - "3307:3306"
+    networks:
+      - smartsure-network
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - smartsure-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - smartsure-network
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - smartsure-network
+
+  discovery-server:
+    build: ./DiscoveryServer
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    networks:
+      - smartsure-network
+
+  config-server:
+    build: ./ConfigServerApplication
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./config-repo:/app/config-repo
+    environment:
+      - SPRING_PROFILES_ACTIVE=git
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/saumya-pande/SmartSure_Config-repo
+    depends_on:
+      - discovery-server
+    networks:
+      - smartsure-network
+
+  api-gateway:
+    build: ./APIGatewayApplication
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_DATA_REDIS_HOST=redis
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+    depends_on:
+      - config-server
+      - discovery-server
+      - redis
+    networks:
+      - smartsure-network
+
+  auth-service:
+    build: ./AuthenticationServiceApplication
+    container_name: auth-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - AUTH_DB_URL=jdbc:mysql://mysql:3306/smartsure_auth?createDatabaseIfNotExist=true
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - APP_UPLOAD_DIR=/app/uploads
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+    volumes:
+      - auth-uploads:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      config-server:
+        condition: service_started
+    networks:
+      - smartsure-network
+
+  policy-service:
+    build: ./PolicyServiceApplication
+    container_name: policy-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - POLICY_DB_URL=jdbc:mysql://mysql:3306/smartsure_policy?createDatabaseIfNotExist=true
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+    networks:
+      - smartsure-network
+
+  claims-service:
+    build: ./ClaimsServiceApplication
+    container_name: claims-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - CLAIMS_DB_URL=jdbc:mysql://mysql:3306/smartsure_claims?createDatabaseIfNotExist=true
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - FILE_UPLOAD_DIR=/app/claims-uploads
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+    volumes:
+      - claims-uploads:/app/claims-uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      config-server:
+        condition: service_started
+    networks:
+      - smartsure-network
+
+  admin-service:
+    build: ./AdminDashboardService
+    container_name: admin-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - ADMIN_DB_URL=jdbc:mysql://mysql:3306/smartsure_admin?createDatabaseIfNotExist=true
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+    networks:
+      - smartsure-network
+
+  notification-service:
+    build: ./NoficationServiceApplication
+    container_name: notification-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      config-server:
+        condition: service_started
+    networks:
+      - smartsure-network
+
+networks:
+  smartsure-network:
+    driver: bridge
+
+volumes:
+  auth-uploads:
+  claims-uploads:

@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         classes = HeaderAuthFilter.class
     )
 )
-class BasicPolicyControllerTest {
+public class BasicPolicyControllerTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
