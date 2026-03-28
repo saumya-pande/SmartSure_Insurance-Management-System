@@ -15,6 +15,12 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String SECRET;
 
+    @Value("${jwt.expiration:3600000}")
+    private long EXPIRATION;
+
+    @Value("${jwt.refresh-expiration:86400000}")
+    private long REFRESH_EXPIRATION;
+
     private SecretKey getKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes());
     }
@@ -23,7 +29,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("role", user.getRole().name())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
+                .expiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(getKey(), Jwts.SIG.HS256)
                 .compact();
     }
@@ -31,7 +37,7 @@ public class JwtUtil {
     public String generateRefreshToken(User user) {
         return Jwts.builder()
                 .subject(user.getEmail())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
+                .expiration(new Date(System.currentTimeMillis() + REFRESH_EXPIRATION))
                 .signWith(getKey(), Jwts.SIG.HS256)
                 .compact();
     }
@@ -55,5 +61,9 @@ public class JwtUtil {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public long getRefreshExpiration() {
+        return REFRESH_EXPIRATION;
     }
 }

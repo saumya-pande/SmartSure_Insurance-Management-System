@@ -39,6 +39,12 @@ public class AuthController {
     public ResponseEntity<String> logout(@RequestHeader("Authorization") String header) {
         return ResponseEntity.ok(service.logout(header.substring(7)));
     }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token using a refresh token")
+    public ResponseEntity<AuthResponse> refresh(@RequestHeader("Refresh-Token") String refreshToken) {
+        return ResponseEntity.ok(service.refresh(refreshToken));
+    }
     
     @GetMapping("/validate")
     @Operation(summary = "Validate if a JWT token is still active")

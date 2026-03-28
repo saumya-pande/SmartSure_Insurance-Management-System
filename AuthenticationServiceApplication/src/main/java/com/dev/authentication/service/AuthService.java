@@ -72,15 +72,46 @@ public class AuthService {
     }
 
     private AuthResponse generateTokens(User user) {
-        return new AuthResponse(
-                jwt.generateToken(user),
-                jwt.generateRefreshToken(user),
-                user.getRole().name()
+        String accessToken = jwt.generateToken(user);
+        String refreshToken = jwt.generateRefreshToken(user);
+
+        // Store refresh token in Redis with same expiration as the token itself
+        redisTemplate.opsForValue().set(
+                "refresh_token:" + refreshToken,
+                user.getEmail(),
+                java.time.Duration.ofMillis(jwt.getRefreshExpiration())
         );
+
+        return new AuthResponse(accessToken, refreshToken, user.getRole().name());
+    }
+
+    public AuthResponse refresh(String refreshToken) {
+        if (!jwt.validate(refreshToken)) {
+            throw new InvalidOperationException("Invalid refresh token");
+        }
+
+        String email = redisTemplate.opsForValue().get("refresh_token:" + refreshToken);
+        if (email == null) {
+            throw new InvalidOperationException("Refresh token expired or revoked");
+        }
+
+        User user = repo.findByEmail(email)
+                .orElseThrow(() -> new InvalidOperationException("User not found"));
+
+        // Revoke the old refresh token (rotate)
+        redisTemplate.delete("refresh_token:" + refreshToken);
+
+        // Generate new pair
+        return generateTokens(user);
     }
     
     public String logout(String token) {
+        // Revoke access token
         redisTemplate.opsForValue().set("revoked:" + token, "true", java.time.Duration.ofHours(24));
+        
+        // Note: Refresh token should ideally be passed for revocation, 
+        // but here we just revoke the access token. 
+        // If we want to revoke ALL sessions for a user, we'd need a different approach.
         return "Logged out successfully!";
     }
 

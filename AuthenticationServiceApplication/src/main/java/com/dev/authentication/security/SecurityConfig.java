@@ -1,6 +1,5 @@
 package com.dev.authentication.security;
 
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -15,47 +14,46 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
-	
+
 	private final HeaderAuthFilter headerAuthFilter;
 
-    public SecurityConfig(HeaderAuthFilter headerAuthFilter) {
-        this.headerAuthFilter = headerAuthFilter;
-    }
-    
+	public SecurityConfig(HeaderAuthFilter headerAuthFilter) {
+		this.headerAuthFilter = headerAuthFilter;
+	}
+
 	@Bean
 	public PasswordEncoder passwordEncoder() {
-	    return new Argon2PasswordEncoder(16, 32, 1, 1 << 13, 3);
+		return new Argon2PasswordEncoder(16, 32, 1, 1 << 13, 3);
 	}
+
 	@Bean
 	@Order(1)
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-	    
-		
-		http
-        .csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests(auth -> auth
-            // PUBLIC endpoints
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/validate").permitAll()
-        	    .requestMatchers("/api/auth/logout").authenticated() 
-            .requestMatchers(
-            	    "/v3/api-docs/**",
-            	    "/v3/api-docs/swagger-config",
-            	    "/swagger-ui/**",
-            	    "/swagger-ui.html",
-            	    "/webjars/**",
-            	    "/actuator/**"
-            ).permitAll()
 
-            // EVERYTHING ELSE → secured
-            .anyRequest().authenticated()
-        )
-        .sessionManagement(session ->
-        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class); // ✅
+		http
+				.csrf(csrf -> csrf.disable())
+				.authorizeHttpRequests(auth -> auth
+						// PUBLIC endpoints
+						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/validate",
+								"/api/auth/refresh")
+						.permitAll()
+						.requestMatchers("/api/auth/logout").authenticated()
+						.requestMatchers(
+								"/v3/api-docs/**",
+								"/v3/api-docs/swagger-config",
+								"/swagger-ui/**",
+								"/swagger-ui.html",
+								"/webjars/**",
+								"/actuator/**")
+						.permitAll()
+
+						// EVERYTHING ELSE → secured
+						.anyRequest().authenticated())
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 
-	    
 	}
 
 }
