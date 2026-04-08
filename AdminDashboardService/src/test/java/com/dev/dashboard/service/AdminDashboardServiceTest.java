@@ -12,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -65,7 +64,7 @@ public class AdminDashboardServiceTest {
 
     @Test
     void getUsers_Success() {
-        Page<UserResponse> page = new PageImpl<>(List.of(new UserResponse()));
+        RestPage<UserResponse> page = new RestPage<>(List.of(new UserResponse()), 0, 10, 1);
         when(authClient.getUsers(anyString(), anyString(), any(), anyBoolean(), anyInt(), anyInt(), anyString(), anyString()))
                 .thenReturn(page);
 
@@ -87,7 +86,7 @@ public class AdminDashboardServiceTest {
 
     @Test
     void getKyc_Success() {
-        Page<KycResponse> page = new PageImpl<>(List.of(new KycResponse()));
+        RestPage<KycResponse> page = new RestPage<>(List.of(new KycResponse()), 0, 10, 1);
         when(authClient.getKyc(any(), anyString(), anyInt(), anyInt(), anyString(), anyString())).thenReturn(page);
 
         Page<KycResponse> result = adminDashboardService.getKyc(KycStatus.PENDING, "test@test.com", 0, 10);
@@ -146,7 +145,7 @@ public class AdminDashboardServiceTest {
 
     @Test
     void getBasicPolicies_Success() {
-        Page<BasicPolicyResponse> page = new PageImpl<>(List.of(new BasicPolicyResponse()));
+        RestPage<BasicPolicyResponse> page = new RestPage<>(List.of(new BasicPolicyResponse()), 0, 10, 1);
         when(policyClient.getBasicPolicies(any(), any(), anyString(), anyInt(), anyInt(), anyString(), anyString(), anyString()))
                 .thenReturn(page);
 
@@ -157,7 +156,7 @@ public class AdminDashboardServiceTest {
 
     @Test
     void getCustomerPolicies_Success() {
-        Page<CustomerPolicyResponse> page = new PageImpl<>(List.of(new CustomerPolicyResponse()));
+        RestPage<CustomerPolicyResponse> page = new RestPage<>(List.of(new CustomerPolicyResponse()), 0, 10, 1);
         when(policyClient.getCustomerPolicies(anyString(), any(), any(), anyDouble(), anyDouble(), anyString(), anyString(), anyInt(), anyInt(), anyString(), anyString(), anyString()))
                 .thenReturn(page);
 
@@ -168,7 +167,7 @@ public class AdminDashboardServiceTest {
 
     @Test
     void getClaims_Success() {
-        Page<ClaimResponse> page = new PageImpl<>(List.of(new ClaimResponse()));
+        RestPage<ClaimResponse> page = new RestPage<>(List.of(new ClaimResponse()), 0, 10, 1);
         when(claimsClient.getClaims(any(), anyString(), anyString(), anyString(), anyInt(), anyInt(), anyString(), anyString()))
                 .thenReturn(page);
 

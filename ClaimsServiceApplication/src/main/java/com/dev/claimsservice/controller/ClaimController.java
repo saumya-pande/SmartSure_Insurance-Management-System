@@ -73,17 +73,22 @@ public class ClaimController {
         return ResponseEntity.ok(service.updateStatus(id, status));
     }
 
-    // ADMIN — get all claims
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    @Operation(summary = "Get all claims (admin) with optional status filter")
+    @Operation(summary = "Get all claims (admin) with optional status/email/date filter")
     public ResponseEntity<Page<ClaimResponse>> getAll(
             @RequestParam(name = "status", required = false) ClaimStatus status,
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(service.getAll(
                 status,
+                email,
+                startDate,
+                endDate,
                 PageRequest.of(page, size, Sort.by("createdAt").descending())));
     }
 

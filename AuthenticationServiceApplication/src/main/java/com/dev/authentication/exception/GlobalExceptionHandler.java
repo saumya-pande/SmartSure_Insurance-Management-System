@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -45,16 +43,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidation(
             MethodArgumentNotValidException ex, HttpServletRequest req) {
 
-        Map<String, String> fieldErrors = new LinkedHashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(err -> fieldErrors.put(err.getField(), err.getDefaultMessage()));
+        java.util.List<ErrorResponse.ValidationError> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(err -> new ErrorResponse.ValidationError(err.getField(), err.getDefaultMessage()))
+                .toList();
 
         ErrorResponse body = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Validation Failed")
-                .message("One or more fields failed validation. See 'fieldErrors' for details.")
+                .message("Invalid input data")
                 .path(req.getRequestURI())
                 .timestamp(LocalDateTime.now())
-                .fieldErrors(fieldErrors)
+                .errors(errors)
                 .build();
 
         return ResponseEntity.badRequest().body(body);
@@ -91,7 +90,7 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException ex, HttpServletRequest req) {
 
         String message;
-        Map<String, String> fieldErrors = null;
+        java.util.List<ErrorResponse.ValidationError> errors = null;
 
         Throwable cause = ex.getCause();
         if (cause instanceof com.fasterxml.jackson.databind.exc.InvalidFormatException ife) {
@@ -103,8 +102,7 @@ public class GlobalExceptionHandler {
                     : "unknown";
             message = String.format("Invalid value '%s' for field '%s'. Expected type: %s.",
                     ife.getValue(), fieldName, targetType);
-            fieldErrors = new LinkedHashMap<>();
-            fieldErrors.put(fieldName, message);
+            errors = java.util.List.of(new ErrorResponse.ValidationError(fieldName, message));
 
         } else if (cause instanceof com.fasterxml.jackson.databind.exc.MismatchedInputException mie) {
             // e.g. missing required field, wrong JSON structure
@@ -115,8 +113,7 @@ public class GlobalExceptionHandler {
                     : "unknown";
             message = String.format("Field '%s' has an invalid value or type. Expected: %s.",
                     fieldName, targetType);
-            fieldErrors = new LinkedHashMap<>();
-            fieldErrors.put(fieldName, message);
+            errors = java.util.List.of(new ErrorResponse.ValidationError(fieldName, message));
 
         } else if (cause instanceof com.fasterxml.jackson.core.JsonParseException) {
             message = "Request body contains invalid JSON syntax. " +
@@ -132,7 +129,7 @@ public class GlobalExceptionHandler {
                 .message(message)
                 .path(req.getRequestURI())
                 .timestamp(LocalDateTime.now())
-                .fieldErrors(fieldErrors)
+                .errors(errors)
                 .build();
 
         return ResponseEntity.badRequest().body(body);
@@ -159,6 +156,30 @@ public class GlobalExceptionHandler {
                 "Unauthorized",
                 "Authentication is required. Please provide a valid JWT token.",
                 req);
+    }
+
+    // ── 400 Bad Request — JPA Constraint Violations (e.g., persist time) ──────
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            jakarta.validation.ConstraintViolationException ex, HttpServletRequest req) {
+
+        java.util.List<ErrorResponse.ValidationError> errors = ex.getConstraintViolations().stream()
+                .map(violation -> {
+                    String path = violation.getPropertyPath().toString();
+                    return new ErrorResponse.ValidationError(path, violation.getMessage());
+                })
+                .toList();
+
+        ErrorResponse body = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message("Invalid input data at persistence layer")
+                .path(req.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .errors(errors)
+                .build();
+
+        return ResponseEntity.badRequest().body(body);
     }
 
     // ── 500 fallback ─────────────────────────────────────────────────────────

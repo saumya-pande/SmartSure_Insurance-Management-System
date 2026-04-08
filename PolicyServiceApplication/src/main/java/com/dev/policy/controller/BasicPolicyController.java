@@ -55,9 +55,12 @@ public class BasicPolicyController {
     @GetMapping("/all")
     @Operation(summary = "Get all policies (admin)")
     public ResponseEntity<Page<BasicPolicyResponse>> getAll(
+            @RequestParam(name = "status", required = false) PolicyStatus status,
+            @RequestParam(name = "type", required = false) com.dev.policy.entity.PolicyType type,
+            @RequestParam(name = "policyName", required = false) String policyName,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-        return ResponseEntity.ok(service.getAll(PageRequest.of(page, size, Sort.by("id"))));
+        return ResponseEntity.ok(service.getAll(status, type, policyName, PageRequest.of(page, size, Sort.by("id"))));
     }
 
     // CUSTOMER — only sees active policies

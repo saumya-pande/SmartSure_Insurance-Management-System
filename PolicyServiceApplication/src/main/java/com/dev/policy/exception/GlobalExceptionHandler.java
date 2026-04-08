@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -74,18 +72,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidation(
             MethodArgumentNotValidException ex, HttpServletRequest req) {
 
-        Map<String, String> fieldErrors = new LinkedHashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(err ->
-            fieldErrors.put(err.getField(), err.getDefaultMessage())
-        );
+        java.util.List<ErrorResponse.ValidationError> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(err -> new ErrorResponse.ValidationError(err.getField(), err.getDefaultMessage()))
+                .toList();
 
         ErrorResponse body = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Validation Failed")
-                .message("One or more fields failed validation. See 'fieldErrors' for details.")
+                .message("Invalid input data")
                 .path(req.getRequestURI())
                 .timestamp(LocalDateTime.now())
-                .fieldErrors(fieldErrors)
+                .errors(errors)
                 .build();
 
         return ResponseEntity.badRequest().body(body);
@@ -149,6 +146,30 @@ public class GlobalExceptionHandler {
             "Unauthorized",
             "Authentication is required. Please provide a valid JWT token.",
             req);
+    }
+
+    // ── 400 Bad Request — JPA Constraint Violations (e.g., persist time) ──────
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            jakarta.validation.ConstraintViolationException ex, HttpServletRequest req) {
+
+        java.util.List<ErrorResponse.ValidationError> errors = ex.getConstraintViolations().stream()
+                .map(violation -> {
+                    String path = violation.getPropertyPath().toString();
+                    return new ErrorResponse.ValidationError(path, violation.getMessage());
+                })
+                .toList();
+
+        ErrorResponse body = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message("Invalid input data at persistence layer")
+                .path(req.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .errors(errors)
+                .build();
+
+        return ResponseEntity.badRequest().body(body);
     }
 
     // ── 500 fallback ─────────────────────────────────────────────────────

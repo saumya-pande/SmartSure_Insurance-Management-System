@@ -20,9 +20,9 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
         return path.startsWith("/v3/api-docs") ||
-               path.startsWith("/swagger-ui") ||
-               path.startsWith("/actuator") ||
-               path.startsWith("/webjars");
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/actuator") ||
+                path.startsWith("/webjars");
     }
 
     @Autowired
@@ -30,12 +30,12 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-                                    throws ServletException, IOException {
+            HttpServletResponse response,
+            FilterChain filterChain)
+            throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
         String email = request.getHeader("X-User-Email");
-        String role  = request.getHeader("X-User-Role");
+        String role = request.getHeader("X-User-Role");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
@@ -48,7 +48,6 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
                 return;
             }
         }
-
 
         if (email != null && role != null) {
             var authorities = List.of(new SimpleGrantedAuthority(role));

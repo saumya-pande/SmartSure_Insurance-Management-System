@@ -191,7 +191,7 @@ public class BasicPolicyControllerTest {
         @DisplayName("should return paginated active policies for CUSTOMER")
         void getActive_success() throws Exception {
             Page<BasicPolicyResponse> page = new PageImpl<>(List.of(sampleResponse));
-            when(service.getActive(any())).thenReturn(page);
+            when(service.getActive(any())).thenReturn(new com.dev.policy.dto.RestPage<>(page));
 
             mockMvc.perform(get("/api/policies")
                             .param("page", "0")

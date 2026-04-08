@@ -29,31 +29,37 @@ public class SecurityConfig {
 	@Bean
 	@Order(1)
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
 		http
 				.csrf(csrf -> csrf.disable())
+				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 				.authorizeHttpRequests(auth -> auth
-						// PUBLIC endpoints
-						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/validate",
-								"/api/auth/refresh")
-						.permitAll()
+						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/validate", "/api/auth/refresh").permitAll()
 						.requestMatchers("/api/auth/logout").authenticated()
 						.requestMatchers(
 								"/v3/api-docs/**",
-								"/v3/api-docs/swagger-config",
 								"/swagger-ui/**",
 								"/swagger-ui.html",
 								"/webjars/**",
-								"/actuator/**")
+								"/actuator/**",
+								"/error")
 						.permitAll()
-
-						// EVERYTHING ELSE → secured
 						.anyRequest().authenticated())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
+	}
 
+	@Bean
+	public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+		var configuration = new org.springframework.web.cors.CorsConfiguration();
+		configuration.setAllowedOriginPatterns(java.util.List.of("http://localhost:*", "http://127.0.0.1:*"));
+		configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+		configuration.setAllowedHeaders(java.util.List.of("*"));
+		configuration.setAllowCredentials(true);
+		var source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+		return source;
 	}
 
 }

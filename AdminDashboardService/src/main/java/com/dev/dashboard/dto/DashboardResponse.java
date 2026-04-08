@@ -4,7 +4,10 @@ import lombok.Builder;
 import lombok.Getter;
 import java.util.Map;
 
-@Getter @Builder
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+@Getter @Builder @NoArgsConstructor @AllArgsConstructor
 public class DashboardResponse {
 
     // users
@@ -22,6 +25,7 @@ public class DashboardResponse {
     private long totalBasicPolicies;
     private long activeBasicPolicies;
     private long inactiveBasicPolicies;
+    private Map<String, Long> basicPoliciesByType;
 
     // purchased policies
     private long totalPoliciesSold;

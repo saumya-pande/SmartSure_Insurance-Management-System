@@ -1,13 +1,17 @@
 package com.dev.policy.dto;
 
-
 import com.dev.policy.entity.PolicyType;
 import com.dev.policy.entity.PurchaseStatus;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
-@Getter @Builder
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CustomerPolicyResponse {
     private Long id;
     private String holderName;

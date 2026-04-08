@@ -8,15 +8,18 @@ import com.dev.policy.entity.*;
 import com.dev.policy.exception.*;
 import com.dev.policy.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CustomerPolicyService {
 
     private final CustomerPolicyRepository repo;
@@ -86,10 +89,14 @@ public class CustomerPolicyService {
         payload.put("policyId", saved.getId());
         payload.put("policyName", basic.getPolicyName());
         payload.put("amount", saved.getPremiumAmount());
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.EXCHANGE_NAME,
-                RabbitMQConfig.ROUTING_KEY_PURCHASED,
-                payload);
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.EXCHANGE_NAME,
+                    RabbitMQConfig.ROUTING_KEY_PURCHASED,
+                    payload);
+        } catch (Exception e) {
+            log.error("Failed to send policy purchase event to RabbitMQ for policy ID: {}. Error: {}", saved.getId(), e.getMessage());
+        }
 
         return toResponse(saved);
     }
@@ -102,8 +109,31 @@ public class CustomerPolicyService {
         return page.map(this::toResponse);
     }
 
+    /** Simple getAll — no filters (used by customer-facing controller). */
     public Page<CustomerPolicyResponse> getAll(Pageable pageable) {
         return repo.findAll(pageable).map(this::toResponse);
+    }
+
+    /** Admin getAll with full filter support. */
+    public Page<CustomerPolicyResponse> getAll(String email, PolicyType policyType,
+            PurchaseStatus status, Double minPremium, Double maxPremium,
+            String startDateStr, String endDateStr, Pageable pageable) {
+
+        LocalDate startDate = (startDateStr != null && !startDateStr.isBlank())
+                ? LocalDate.parse(startDateStr) : null;
+        LocalDate endDate = (endDateStr != null && !endDateStr.isBlank())
+                ? LocalDate.parse(endDateStr) : null;
+
+        // If no filters provided, use simple findAll
+        if (email == null && policyType == null && status == null
+                && minPremium == null && maxPremium == null
+                && startDate == null && endDate == null) {
+            return repo.findAll(pageable).map(this::toResponse);
+        }
+
+        return repo.findByFilters(email, policyType, status,
+                minPremium, maxPremium, startDate, endDate, pageable)
+                .map(this::toResponse);
     }
 
     public CustomerPolicyResponse getById(Long id) {

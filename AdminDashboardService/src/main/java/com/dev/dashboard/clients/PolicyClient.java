@@ -3,10 +3,11 @@ package com.dev.dashboard.clients;
 
 import java.util.Map;
 
-import com.dev.dashboard.clients.fallback.PolicyClientFallback;
+import com.dev.dashboard.dto.RestPage;
 import com.dev.dashboard.entity.PolicyType;
+import com.dev.dashboard.entity.PolicyStatus;
+import com.dev.dashboard.entity.PurchaseStatus;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import com.dev.dashboard.dto.BasicPolicyRequest;
@@ -15,7 +16,7 @@ import com.dev.dashboard.dto.CustomerPolicyResponse;
 
 
 
-@FeignClient(name = "POLICY-SERVICE", fallback = PolicyClientFallback.class)
+@FeignClient(name = "POLICY-SERVICE")
 public interface PolicyClient {
 
     // basic policy CRUD
@@ -44,15 +45,15 @@ public interface PolicyClient {
     @PatchMapping("/api/admin/policies/{id}/status")
     BasicPolicyResponse updatePolicyStatus(
             @PathVariable(name = "id") Long id,
-            @RequestParam(name = "status") com.dev.dashboard.entity.PolicyStatus status,
+            @RequestParam(name = "status") PolicyStatus status,
             @RequestHeader("X-User-Role") String userRole,
             @RequestHeader("X-User-Email") String userEmail
     );
 
     @GetMapping("/api/admin/policies")
-    Page<BasicPolicyResponse> getBasicPolicies(
+    RestPage<BasicPolicyResponse> getBasicPolicies(
             @RequestParam(name = "type", required = false) PolicyType type,
-            @RequestParam(name = "status", required = false) com.dev.dashboard.entity.PolicyStatus status,
+            @RequestParam(name = "status", required = false) PolicyStatus status,
             @RequestParam(name = "policyName", required = false) String policyName,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
@@ -63,10 +64,10 @@ public interface PolicyClient {
 
     // customer policies
     @GetMapping("/api/admin/policies/purchased")
-    Page<CustomerPolicyResponse> getCustomerPolicies(
+    RestPage<CustomerPolicyResponse> getCustomerPolicies(
             @RequestParam(name = "email", required = false) String email,
-            @RequestParam(name = "policyType", required = false) com.dev.dashboard.entity.PolicyType policyType,
-            @RequestParam(name = "status", required = false) com.dev.dashboard.entity.PurchaseStatus status,
+            @RequestParam(name = "policyType", required = false) PolicyType policyType,
+            @RequestParam(name = "status", required = false) PurchaseStatus status,
             @RequestParam(name = "minPremium", required = false) Double minPremium,
             @RequestParam(name = "maxPremium", required = false) Double maxPremium,
             @RequestParam(name = "startDate", required = false) String startDate,

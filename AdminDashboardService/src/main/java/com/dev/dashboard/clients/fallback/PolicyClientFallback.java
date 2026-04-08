@@ -4,11 +4,11 @@ import com.dev.dashboard.clients.PolicyClient;
 import com.dev.dashboard.dto.BasicPolicyRequest;
 import com.dev.dashboard.dto.BasicPolicyResponse;
 import com.dev.dashboard.dto.CustomerPolicyResponse;
+import com.dev.dashboard.dto.RestPage;
 import com.dev.dashboard.entity.PolicyStatus;
 import com.dev.dashboard.entity.PolicyType;
 import com.dev.dashboard.entity.PurchaseStatus;
 import com.dev.dashboard.exception.ServiceUnavailableException;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -39,13 +39,13 @@ public class PolicyClientFallback implements PolicyClient {
     }
 
     @Override
-    public Page<BasicPolicyResponse> getBasicPolicies(PolicyType type, PolicyStatus status,
+    public RestPage<BasicPolicyResponse> getBasicPolicies(PolicyType type, PolicyStatus status,
             String policyName, int page, int size, String sortBy, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);
     }
 
     @Override
-    public Page<CustomerPolicyResponse> getCustomerPolicies(String email, PolicyType policyType,
+    public RestPage<CustomerPolicyResponse> getCustomerPolicies(String email, PolicyType policyType,
             PurchaseStatus status, Double minPremium, Double maxPremium,
             String startDate, String endDate, int page, int size, String sortBy, String userRole, String userEmail) {
         throw new ServiceUnavailableException(SERVICE_NAME);

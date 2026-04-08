@@ -47,7 +47,6 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
             }
         }
 
-
         if (email != null && role != null) {
             var authorities = List.of(new SimpleGrantedAuthority(role));
             var auth = new UsernamePasswordAuthenticationToken(email, null, authorities);

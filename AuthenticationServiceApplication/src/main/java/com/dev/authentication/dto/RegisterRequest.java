@@ -1,6 +1,5 @@
 package com.dev.authentication.dto;
 
-import com.dev.authentication.entity.Role;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
@@ -31,5 +30,4 @@ public class RegisterRequest {
     )
     private String password;
 
-    private Role role = Role.CUSTOMER;
 }

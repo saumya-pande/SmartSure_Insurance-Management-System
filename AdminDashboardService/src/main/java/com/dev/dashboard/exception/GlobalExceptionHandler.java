@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -47,20 +45,31 @@ public class GlobalExceptionHandler {
             FeignException ex, HttpServletRequest req) {
 
         HttpStatus status = HttpStatus.resolve(ex.status());
-        if (status == null) {
-            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        if (status == null || ex.status() <= 0) {
+            status = HttpStatus.SERVICE_UNAVAILABLE;
+            return build(status, "Service Unavailable", "The downstream microservice is offline or unreachable.", req);
         }
 
         String error = status.getReasonPhrase();
-        String message = "Downstream service error: " + ex.getMessage();
+        String message = ex.getMessage();
 
-        // Provide cleaner messages for common statuses
-        if (status == HttpStatus.NOT_FOUND) {
-            message = "The requested resource was not found in the downstream service.";
-            error = "Not Found";
-        } else if (status == HttpStatus.BAD_REQUEST) {
-            message = "The downstream service rejected the request.";
-            error = "Bad Request";
+        try {
+            if (ex.contentUTF8() != null && !ex.contentUTF8().isBlank()) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(ex.contentUTF8());
+                if (node.has("message")) {
+                   message = node.get("message").asText();
+                }
+                if (node.has("error")) {
+                   error = node.get("error").asText();
+                }
+            }
+        } catch (Exception ignored) {
+            if (status == HttpStatus.NOT_FOUND) {
+                message = "The requested resource was not found in the downstream service.";
+            } else if (status == HttpStatus.BAD_REQUEST) {
+                message = "The downstream service rejected the request.";
+            }
         }
 
         return build(status, error, message, req);
@@ -71,18 +80,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidation(
             MethodArgumentNotValidException ex, HttpServletRequest req) {
 
-        Map<String, String> fieldErrors = new LinkedHashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(err ->
-            fieldErrors.put(err.getField(), err.getDefaultMessage())
-        );
+        java.util.List<ErrorResponse.ValidationError> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(err -> new ErrorResponse.ValidationError(err.getField(), err.getDefaultMessage()))
+                .toList();
 
         ErrorResponse body = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Validation Failed")
-                .message("One or more fields failed validation. See 'fieldErrors' for details.")
+                .message("Invalid input data")
                 .path(req.getRequestURI())
                 .timestamp(LocalDateTime.now())
-                .fieldErrors(fieldErrors)
+                .errors(errors)
                 .build();
 
         return ResponseEntity.badRequest().body(body);
@@ -145,6 +153,64 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNAUTHORIZED,
             "Unauthorized",
             "Authentication is required. Please provide a valid JWT token.",
+            req);
+    }
+
+    // ── 400 Bad Request — JPA Constraint Violations (e.g., persist time) ──────
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            jakarta.validation.ConstraintViolationException ex, HttpServletRequest req) {
+
+        java.util.List<ErrorResponse.ValidationError> errors = ex.getConstraintViolations().stream()
+                .map(violation -> {
+                    String path = violation.getPropertyPath().toString();
+                    return new ErrorResponse.ValidationError(path, violation.getMessage());
+                })
+                .toList();
+
+        ErrorResponse body = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message("Invalid input data at persistence layer")
+                .path(req.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .errors(errors)
+                .build();
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    // ── 503 Service Unavailable — Circuit Breaker Open ────────────────────────
+    @ExceptionHandler(io.github.resilience4j.circuitbreaker.CallNotPermittedException.class)
+    public ResponseEntity<ErrorResponse> handleCircuitBreakerOpen(
+            io.github.resilience4j.circuitbreaker.CallNotPermittedException ex, HttpServletRequest req) {
+
+        return build(HttpStatus.SERVICE_UNAVAILABLE,
+            "Service Unavailable",
+            "The downstream service is currently overloaded or unresponsive. Circuit breaker is open. Please try again later.",
+            req);
+    }
+
+    // ── 500 Circuit Breaker Wrapper Unwrapping ────────────────────────────────
+    @ExceptionHandler(org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException.class)
+    public ResponseEntity<ErrorResponse> handleNoFallbackAvailable(
+            org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException ex, HttpServletRequest req) {
+        
+        Throwable cause = ex.getCause();
+        
+        // Unwrap FeignExceptions (e.g., 404, 400 from downstream)
+        if (cause instanceof FeignException) {
+            return handleFeignException((FeignException) cause, req);
+        }
+        
+        // Unwrap Circuit Breaker Open state
+        if (cause instanceof io.github.resilience4j.circuitbreaker.CallNotPermittedException) {
+            return handleCircuitBreakerOpen((io.github.resilience4j.circuitbreaker.CallNotPermittedException) cause, req);
+        }
+        
+        return build(HttpStatus.INTERNAL_SERVER_ERROR,
+            "Internal Server Error",
+            "An unexpected error occurred down stream without a fallback: " + (cause != null ? cause.getMessage() : ex.getMessage()),
             req);
     }
 

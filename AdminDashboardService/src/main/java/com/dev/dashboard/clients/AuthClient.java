@@ -3,21 +3,20 @@ package com.dev.dashboard.clients;
 import java.util.Map;
 
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
-import com.dev.dashboard.clients.fallback.AuthClientFallback;
 import com.dev.dashboard.dto.KycResponse;
+import com.dev.dashboard.dto.RestPage;
 import com.dev.dashboard.dto.UserResponse;
 import com.dev.dashboard.entity.KycStatus;
 import com.dev.dashboard.entity.Role;
 
-@FeignClient(name = "AUTH-SERVICE", fallback = AuthClientFallback.class)
+@FeignClient(name = "AUTH-SERVICE")
 public interface AuthClient {
 
     // users
     @GetMapping("/api/admin/users")
-    Page<UserResponse> getUsers(
+    RestPage<UserResponse> getUsers(
             @RequestParam(name = "email", required = false) String email,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "role", required = false) Role role,
@@ -38,7 +37,7 @@ public interface AuthClient {
 
     // kyc
     @GetMapping("/api/admin/kyc")
-    Page<KycResponse> getKyc(
+    RestPage<KycResponse> getKyc(
             @RequestParam(name = "status", required = false) KycStatus status,
             @RequestParam(name = "email", required = false) String email,
             @RequestParam(name = "page", defaultValue = "0") int page,

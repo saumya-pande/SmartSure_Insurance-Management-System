@@ -2,6 +2,7 @@ package com.dev.dashboard.service;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,7 @@ public class AdminDashboardService {
 
     // ── Dashboard ─────────────────────────────────────────────
 
+    @Cacheable(cacheNames = "dashboard", key = "'admin-dashboard'")
     public DashboardResponse getDashboard() {
         String email = currentEmail();
         Map<String, Long> userCounts   = authClient.getUserCounts(ADMIN_ROLE, email);
@@ -70,12 +72,16 @@ public class AdminDashboardService {
                 .totalBasicPolicies(policyCounts.getOrDefault("total", 0L))
                 .activeBasicPolicies(policyCounts.getOrDefault("ACTIVE", 0L))
                 .inactiveBasicPolicies(policyCounts.getOrDefault("INACTIVE", 0L))
+                .basicPoliciesByType(Map.of(
+                        "HOME", policyCounts.getOrDefault("basicHOME", 0L),
+                        "VEHICLE", policyCounts.getOrDefault("basicVEHICLE", 0L)
+                ))
                 // purchased policies
                 .totalPoliciesSold(policyCounts.getOrDefault("sold", 0L))
                 .activePoliciesSold(policyCounts.getOrDefault("soldActive", 0L))
                 .policiesSoldByType(Map.of(
-                        "HOME", policyCounts.getOrDefault("HOME", 0L),
-                        "VEHICLE", policyCounts.getOrDefault("VEHICLE", 0L)
+                        "HOME", policyCounts.getOrDefault("soldHOME", 0L),
+                        "VEHICLE", policyCounts.getOrDefault("soldVEHICLE", 0L)
                 ))
                 .totalRevenue(netRevenue)
                 // claims

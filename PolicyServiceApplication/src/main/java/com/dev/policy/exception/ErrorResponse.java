@@ -1,10 +1,13 @@
 package com.dev.policy.exception;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.List;
 
 @Getter
 @Builder
@@ -15,5 +18,13 @@ public class ErrorResponse {
     private String message;
     private String path;
     private LocalDateTime timestamp;
-    private Map<String, String> fieldErrors; // only for validation errors
+    private List<ValidationError> errors;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ValidationError {
+        private String field;
+        private String message;
+    }
 }

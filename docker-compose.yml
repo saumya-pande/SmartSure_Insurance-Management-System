@@ -12,9 +12,11 @@ services:
     networks:
       - smartsure-network
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
       timeout: 20s
       retries: 10
+      start_period: 30s
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -24,6 +26,12 @@ services:
       - "15672:15672"
     networks:
       - smartsure-network
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -32,6 +40,11 @@ services:
       - "6379:6379"
     networks:
       - smartsure-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   zipkin:
     image: openzipkin/zipkin
@@ -48,6 +61,12 @@ services:
       - "8761:8761"
     networks:
       - smartsure-network
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8761 || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   config-server:
     build: ./ConfigServerApplication
@@ -60,9 +79,16 @@ services:
       - SPRING_PROFILES_ACTIVE=git
       - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/saumya-pande/SmartSure_Config-repo
     depends_on:
-      - discovery-server
+      discovery-server:
+        condition: service_healthy
     networks:
       - smartsure-network
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8888/config-server/default || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
 
   api-gateway:
     build: ./APIGatewayApplication
@@ -70,7 +96,6 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_DATA_REDIS_HOST=redis
@@ -79,9 +104,12 @@ services:
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
     depends_on:
-      - config-server
-      - discovery-server
-      - redis
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - smartsure-network
 
@@ -89,7 +117,6 @@ services:
     build: ./AuthenticationServiceApplication
     container_name: auth-service
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - AUTH_DB_URL=jdbc:mysql://mysql:3306/smartsure_auth?createDatabaseIfNotExist=true
@@ -108,9 +135,11 @@ services:
       mysql:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
       config-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - smartsure-network
 
@@ -118,13 +147,13 @@ services:
     build: ./PolicyServiceApplication
     container_name: policy-service
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - POLICY_DB_URL=jdbc:mysql://mysql:3306/smartsure_policy?createDatabaseIfNotExist=true
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION}
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
@@ -132,8 +161,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
       config-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - smartsure-network
 
@@ -141,7 +174,6 @@ services:
     build: ./ClaimsServiceApplication
     container_name: claims-service
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - CLAIMS_DB_URL=jdbc:mysql://mysql:3306/smartsure_claims?createDatabaseIfNotExist=true
@@ -160,9 +192,9 @@ services:
       mysql:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       config-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - smartsure-network
 
@@ -170,7 +202,6 @@ services:
     build: ./AdminDashboardService
     container_name: admin-service
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - ADMIN_DB_URL=jdbc:mysql://mysql:3306/smartsure_admin?createDatabaseIfNotExist=true
@@ -185,7 +216,7 @@ services:
       mysql:
         condition: service_healthy
       config-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - smartsure-network
 
@@ -193,7 +224,6 @@ services:
     build: ./NoficationServiceApplication
     container_name: notification-service
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
@@ -205,9 +235,9 @@ services:
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
     depends_on:
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       config-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - smartsure-network
 

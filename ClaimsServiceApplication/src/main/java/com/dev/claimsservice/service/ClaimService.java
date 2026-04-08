@@ -9,14 +9,19 @@ import com.dev.claimsservice.exception.InvalidOperationException;
 import com.dev.claimsservice.mapper.ClaimMapper;
 import com.dev.claimsservice.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +29,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClaimService {
 	
 	private final RabbitTemplate rabbitTemplate;
@@ -83,6 +89,7 @@ public class ClaimService {
     }
 
     // STEP 2 — customer submits the draft
+    @CacheEvict(cacheNames = "claims", allEntries = true)
     public ClaimResponse submit(String email, Long claimId) {
         Claim claim = getClaimForCustomer(email, claimId);
 
@@ -96,12 +103,17 @@ public class ClaimService {
         Map<String, Object> payload = new HashMap<>();
         payload.put("email", email);
         payload.put("claimId", claimId);
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_CLAIM_SUBMITTED, payload);
+        try {
+            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_CLAIM_SUBMITTED, payload);
+        } catch (Exception e) {
+            log.error("Failed to send claim submission event to RabbitMQ for claim ID: {}. Error: {}", claimId, e.getMessage());
+        }
         
         return mapper.toResponse(claimRepo.save(claim));
     }
 
     // ADMIN — handle all status transitions
+    @CacheEvict(cacheNames = "claims", allEntries = true)
     public ClaimResponse updateStatus(Long claimId, ClaimStatus status) {
         Claim claim = claimRepo.findById(claimId)
                 .orElseThrow(() -> new EntityNotFoundException("Claim", "id", claimId));
@@ -131,7 +143,11 @@ public class ClaimService {
             payload.put("claimId", saved.getId());
             payload.put("status", status.name());
             payload.put("amount", saved.getClaimAmount());
-            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_CLAIM_STATUS_UPDATED, payload);
+            try {
+                rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_CLAIM_STATUS_UPDATED, payload);
+            } catch (Exception e) {
+                log.error("Failed to send claim status update event to RabbitMQ for claim ID: {}. Status: {}. Error: {}", saved.getId(), status, e.getMessage());
+            }
         }
 
         return mapper.toResponse(saved);
@@ -143,14 +159,32 @@ public class ClaimService {
     }
 
     // ADMIN — get all claims filters
-    public Page<ClaimResponse> getAll(ClaimStatus status, Pageable pageable) {
-        if (status != null) {
+    public Page<ClaimResponse> getAll(ClaimStatus status, String email,
+            String startDateStr, String endDateStr, Pageable pageable) {
+        LocalDateTime startDate = (startDateStr != null && !startDateStr.isBlank())
+                ? LocalDate.parse(startDateStr).atStartOfDay() : null;
+        LocalDateTime endDate = (endDateStr != null && !endDateStr.isBlank())
+                ? LocalDate.parse(endDateStr).atTime(23, 59, 59) : null;
+
+        // If date filters are provided, use the flexible query
+        if (startDate != null || endDate != null) {
+            return claimRepo.findByFilters(status, email, startDate, endDate, pageable)
+                    .map(mapper::toResponse);
+        }
+
+        // Original filter logic (no dates)
+        if (status != null && email != null) {
+            return claimRepo.findByStatusAndCustomerEmailContaining(status, email, pageable).map(mapper::toResponse);
+        } else if (status != null) {
             return claimRepo.findByStatus(status, pageable).map(mapper::toResponse);
+        } else if (email != null) {
+            return claimRepo.findByCustomerEmailContaining(email, pageable).map(mapper::toResponse);
         }
         return claimRepo.findAll(pageable).map(mapper::toResponse);
     }
 
     // ADMIN — metrics
+    @Cacheable(cacheNames = "claims", key = "'counts'")
     public Map<String, Long> getClaimCounts() {
         Map<String, Long> counts = new HashMap<>();
         counts.put("total", claimRepo.count());
@@ -161,9 +195,12 @@ public class ClaimService {
     }
 
     // ADMIN — payouts
+    @Cacheable(cacheNames = "claims", key = "'payouts'")
     public Map<String, Double> getApprovedPayouts() {
         Double total = claimRepo.sumClaimAmountByStatus(ClaimStatus.APPROVED);
-        return Map.of("total", total != null ? total : 0.0);
+        Map<String, Double> result = new HashMap<>();
+        result.put("total", total != null ? total : 0.0);
+        return result;
     }
 
     // ── helpers ──────────────────────────────────────────────

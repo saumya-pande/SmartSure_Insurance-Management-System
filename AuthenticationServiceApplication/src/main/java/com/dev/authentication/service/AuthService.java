@@ -1,7 +1,9 @@
 package com.dev.authentication.service;
 
-
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +27,7 @@ import com.dev.authentication.security.JwtUtil;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository repo;
@@ -35,6 +38,7 @@ public class AuthService {
     @Autowired
     private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
+    @CacheEvict(cacheNames = "users", key = "#request.email")
     public String register(RegisterRequest request) {
 
         if (repo.findByEmail(request.getEmail()).isPresent()) {
@@ -45,23 +49,29 @@ public class AuthService {
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(encoder.encode(request.getPassword()))
-                .role(request.getRole() != null ? request.getRole() : Role.CUSTOMER)
+                .role(Role.CUSTOMER)
                 .active(true)
                 .build();
 
         repo.save(user);
-        
+
         Map<String, String> payload = new HashMap<>();
         payload.put("email", user.getEmail());
         payload.put("name", user.getName());
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_REGISTER, payload);
+
+        try {
+            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_REGISTER, payload);
+        } catch (Exception e) {
+            log.error("Failed to send registration event to RabbitMQ for user: {}. Error: {}", user.getEmail(),
+                    e.getMessage());
+        }
 
         return "User registered successfully!";
     }
 
     public AuthResponse login(LoginRequest request) {
 
-        User user = repo.findByEmail(request.getEmail())
+        User user = getUserByEmail(request.getEmail())
                 .orElseThrow(() -> new InvalidOperationException("User does not exist/wrong credentials"));
 
         if (!encoder.matches(request.getPassword(), user.getPassword())) {
@@ -79,8 +89,7 @@ public class AuthService {
         redisTemplate.opsForValue().set(
                 "refresh_token:" + refreshToken,
                 user.getEmail(),
-                java.time.Duration.ofMillis(jwt.getRefreshExpiration())
-        );
+                java.time.Duration.ofMillis(jwt.getRefreshExpiration()));
 
         return new AuthResponse(accessToken, refreshToken, user.getRole().name());
     }
@@ -95,7 +104,7 @@ public class AuthService {
             throw new InvalidOperationException("Refresh token expired or revoked");
         }
 
-        User user = repo.findByEmail(email)
+        User user = getUserByEmail(email)
                 .orElseThrow(() -> new InvalidOperationException("User not found"));
 
         // Revoke the old refresh token (rotate)
@@ -104,22 +113,26 @@ public class AuthService {
         // Generate new pair
         return generateTokens(user);
     }
-    
+
     public String logout(String token) {
         // Revoke access token
         redisTemplate.opsForValue().set("revoked:" + token, "true", java.time.Duration.ofHours(24));
-        
-        // Note: Refresh token should ideally be passed for revocation, 
-        // but here we just revoke the access token. 
-        // If we want to revoke ALL sessions for a user, we'd need a different approach.
+
+        // revokes the access token.
         return "Logged out successfully!";
     }
 
     public boolean isRevoked(String token) {
         return Boolean.TRUE.equals(redisTemplate.hasKey("revoked:" + token));
     }
-    
+
     public boolean isTokenValid(String token) {
         return !isRevoked(token);
     }
+
+    @Cacheable(cacheNames = "users", key = "#email")
+    public java.util.Optional<User> getUserByEmail(String email) {
+        return repo.findByEmail(email);
+    }
+
 }

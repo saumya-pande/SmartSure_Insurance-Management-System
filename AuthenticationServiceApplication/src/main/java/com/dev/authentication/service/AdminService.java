@@ -28,15 +28,8 @@ public class AdminService {
     private final KycMapper mapper;
 
     public Page<UserResponse> getUsers(String email, String name, Role role, Boolean active, int page, int size) {
-        return userRepo.findAll(PageRequest.of(page, size)).map(u -> {
-            if ((email == null || u.getEmail().contains(email)) &&
-                    (name == null || u.getName().contains(name)) &&
-                    (role == null || u.getRole() == role) &&
-                    (active == null || u.isActive() == active)) {
-                return mapper.toUserResponse(u);
-            }
-            return null;
-        }).map(u -> u);
+        return userRepo.findByFilters(email, name, role, active, PageRequest.of(page, size))
+                .map(mapper::toUserResponse);
     }
 
     public UserResponse toggleStatus(Long id, boolean active) {
@@ -54,8 +47,20 @@ public class AdminService {
     }
 
     public Page<KycAdminResponse> getKyc(KycStatus status, String email, int page, int size) {
-        return kycRepo.findAll(PageRequest.of(page, size))
-                .map(mapper::toAdminResponse);
+        PageRequest pageable = PageRequest.of(page, size);
+        if (status != null && email != null) {
+            return kycRepo.findByStatusAndUserEmailContaining(status, email, pageable)
+                    .map(mapper::toAdminResponse);
+        } else if (status != null) {
+            return kycRepo.findByStatus(status, pageable)
+                    .map(mapper::toAdminResponse);
+        } else if (email != null) {
+            return kycRepo.findByUserEmailContaining(email, pageable)
+                    .map(mapper::toAdminResponse);
+        } else {
+            return kycRepo.findAll(pageable)
+                    .map(mapper::toAdminResponse);
+        }
     }
 
     public KycAdminResponse updateKycStatus(Long id, KycStatus status) {
