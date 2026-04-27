@@ -1,6 +1,5 @@
 package com.dev.dashboard.clients;
 
-import com.dev.dashboard.clients.fallback.ClaimsClientFallback;
 import com.dev.dashboard.dto.RestPage;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;

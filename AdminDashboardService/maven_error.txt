@@ -1,0 +1,39 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.dev.dashbaord:AdminDashboardService >---------------
+[INFO] Building AdminDashboardService 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.4.1:clean (default-clean) @ AdminDashboardService ---
+[INFO] Deleting E:\projectideas\Java_Capgemini2025\sdet-Programming\Sprint\AdminDashboardService\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ AdminDashboardService ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ AdminDashboardService ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 33 source files with javac [debug parameters release 17] to target\classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /E:/projectideas/Java_Capgemini2025/sdet-Programming/Sprint/AdminDashboardService/src/main/java/com/dev/dashboard/clients/ClaimsClient.java:[3,42] package com.dev.dashboard.clients.fallback does not exist
+[INFO] 1 error
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.062 s
+[INFO] Finished at: 2026-04-08T22:13:55+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile (default-compile) on project AdminDashboardService: Compilation failure
+[ERROR] /E:/projectideas/Java_Capgemini2025/sdet-Programming/Sprint/AdminDashboardService/src/main/java/com/dev/dashboard/clients/ClaimsClient.java:[3,42] package com.dev.dashboard.clients.fallback does not exist
+[ERROR] 
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

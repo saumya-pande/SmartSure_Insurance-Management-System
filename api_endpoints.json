@@ -1,0 +1,439 @@
+{
+  "projectName": "SmartSure Insurance Management System",
+  "version": "1.0.0",
+  "description": "API endpoints documentation for the microservices-based insurance management system.",
+  "services": [
+    {
+      "name": "Authentication Service",
+      "baseUrl": "/api/auth",
+      "endpoints": [
+        {
+          "path": "/register",
+          "method": "POST",
+          "summary": "Register a new customer account",
+          "requestBody": {
+            "type": "RegisterRequest",
+            "fields": {
+              "name": "string (2-100 chars, letters only)",
+              "email": "string (valid email)",
+              "password": "string (min 8 chars, 1 digit, 1 lower, 1 upper, 1 special)"
+            }
+          },
+          "responses": {
+            "200": { "description": "Successfully registered", "body": "MessageResponse" }
+          }
+        },
+        {
+          "path": "/login",
+          "method": "POST",
+          "summary": "Login with email and password",
+          "requestBody": {
+            "type": "LoginRequest",
+            "fields": {
+              "email": "string (valid email)",
+              "password": "string (min 8 chars)"
+            }
+          },
+          "responses": {
+            "200": { "description": "Successfully logged in", "body": "AuthResponse (token, refreshToken, role)" }
+          }
+        },
+        {
+          "path": "/logout",
+          "method": "POST",
+          "summary": "Logout and revoke the current JWT token",
+          "headers": {
+            "Authorization": "Bearer {token}"
+          },
+          "responses": {
+            "200": { "description": "Successfully logged out", "body": "MessageResponse" }
+          }
+        },
+        {
+          "path": "/refresh",
+          "method": "POST",
+          "summary": "Refresh access token using a refresh token",
+          "headers": {
+            "Refresh-Token": "{refreshToken}"
+          },
+          "responses": {
+            "200": { "description": "Successfully refreshed token", "body": "AuthResponse" }
+          }
+        },
+        {
+          "path": "/validate",
+          "method": "GET",
+          "summary": "Validate if a JWT token is still active",
+          "parameters": [
+            { "name": "token", "in": "query", "required": true, "type": "string" }
+          ],
+          "responses": {
+            "200": { "description": "Boolean validation status" }
+          }
+        },
+        {
+          "path": "/forgot-password",
+          "method": "POST",
+          "summary": "Request a password reset OTP",
+          "requestBody": {
+            "type": "ForgotPasswordRequest",
+            "fields": {
+              "email": "string (valid email)"
+            }
+          }
+        },
+        {
+          "path": "/reset-password",
+          "method": "POST",
+          "summary": "Reset password using OTP",
+          "requestBody": {
+            "type": "ResetPasswordRequest",
+            "fields": {
+              "email": "string",
+              "otp": "string",
+              "newPassword": "string"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "KYC Service",
+      "baseUrl": "/api/kyc",
+      "endpoints": [
+        {
+          "path": "/upload",
+          "method": "POST",
+          "summary": "Upload KYC document",
+          "role": "CUSTOMER",
+          "headers": {
+            "X-User-Email": "Customer email"
+          },
+          "parameters": [
+            { "name": "contactNumber", "in": "query", "type": "string" },
+            { "name": "address", "in": "query", "type": "string" },
+            { "name": "documentType", "in": "query", "type": "string" },
+            { "name": "file", "in": "formData", "type": "file" }
+          ],
+          "consumes": "multipart/form-data"
+        },
+        {
+          "path": "/my",
+          "method": "GET",
+          "summary": "Get my KYC status",
+          "role": "CUSTOMER",
+          "headers": {
+            "X-User-Email": "Customer email"
+          },
+          "responses": {
+            "200": { "body": "KycResponse" }
+          }
+        },
+        {
+          "path": "/",
+          "method": "GET",
+          "summary": "Get all KYC submissions (admin)",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "page", "in": "query", "default": 0 },
+            { "name": "size", "in": "query", "default": 10 },
+            { "name": "sortBy", "in": "query", "default": "id" }
+          ]
+        },
+        {
+          "path": "/my/file",
+          "method": "GET",
+          "summary": "View my KYC document file",
+          "role": "CUSTOMER",
+          "headers": {
+            "X-User-Email": "Customer email"
+          }
+        },
+        {
+          "path": "/{id}/file",
+          "method": "GET",
+          "summary": "View any KYC document file (admin)",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "id", "in": "path", "type": "number" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin Management (Auth)",
+      "baseUrl": "/api/admin",
+      "endpoints": [
+        {
+          "path": "/users",
+          "method": "GET",
+          "summary": "Get all users with optional filters",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "email", "in": "query" },
+            { "name": "name", "in": "query" },
+            { "name": "role", "in": "query", "type": "Role (ADMIN/CUSTOMER)" },
+            { "name": "active", "in": "query", "type": "boolean" },
+            { "name": "page", "in": "query", "default": 0 },
+            { "name": "size", "in": "query", "default": 10 }
+          ]
+        },
+        {
+          "path": "/users/{id}/status",
+          "method": "PATCH",
+          "summary": "Suspend or activate a user",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "id", "in": "path" },
+            { "name": "active", "in": "query", "type": "boolean" }
+          ]
+        },
+        {
+          "path": "/users/count",
+          "method": "GET",
+          "summary": "Get total, active, and suspended user counts",
+          "role": "ADMIN"
+        },
+        {
+          "path": "/kyc",
+          "method": "GET",
+          "summary": "Get all KYC submissions with optional filters",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "status", "in": "query", "type": "KycStatus" },
+            { "name": "email", "in": "query" },
+            { "name": "page", "in": "query", "default": 0 },
+            { "name": "size", "in": "query", "default": 10 }
+          ]
+        },
+        {
+          "path": "/kyc/{id}/status",
+          "method": "PATCH",
+          "summary": "Approve or reject a KYC submission",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "id", "in": "path" },
+            { "name": "status", "in": "query", "type": "KycStatus (PENDING, APPROVED, REJECTED)" }
+          ]
+        },
+        {
+          "path": "/kyc/count",
+          "method": "GET",
+          "summary": "Get KYC counts by status",
+          "role": "ADMIN"
+        }
+      ]
+    },
+    {
+      "name": "Policy Service (Admin)",
+      "baseUrl": "/api/admin",
+      "endpoints": [
+        {
+          "path": "/policies/count",
+          "method": "GET",
+          "summary": "Get policy counts across various categories",
+          "role": "ADMIN"
+        },
+        {
+          "path": "/policies/revenue",
+          "method": "GET",
+          "summary": "Get total revenue metrics",
+          "role": "ADMIN"
+        },
+        {
+          "path": "/policies",
+          "method": "POST",
+          "summary": "Create a new basic policy",
+          "role": "ADMIN",
+          "requestBody": { "type": "BasicPolicyRequest" }
+        },
+        {
+          "path": "/policies/{id}",
+          "method": "PUT",
+          "summary": "Update an existing basic policy",
+          "role": "ADMIN",
+          "parameters": [{ "name": "id", "in": "path" }],
+          "requestBody": { "type": "BasicPolicyRequest" }
+        },
+        {
+          "path": "/policies/{id}",
+          "method": "DELETE",
+          "summary": "Delete a basic policy",
+          "role": "ADMIN",
+          "parameters": [{ "name": "id", "in": "path" }]
+        },
+        {
+          "path": "/policies/{id}/status",
+          "method": "PATCH",
+          "summary": "Update basic policy status (ACTIVE/INACTIVE)",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "id", "in": "path" },
+            { "name": "status", "in": "query" }
+          ]
+        },
+        {
+          "path": "/policies",
+          "method": "GET",
+          "summary": "Get all basic policies with filters",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "status", "in": "query" },
+            { "name": "type", "in": "query", "type": "HOME/VEHICLE" },
+            { "name": "policyName", "in": "query" },
+            { "name": "page", "in": "query", "default": 0 },
+            { "name": "size", "in": "query", "default": 10 },
+            { "name": "sortBy", "in": "query", "default": "id" }
+          ]
+        },
+        {
+          "path": "/policies/purchased",
+          "method": "GET",
+          "summary": "Get all purchased policies with advanced filters",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "email", "in": "query" },
+            { "name": "policyType", "in": "query" },
+            { "name": "status", "in": "query" },
+            { "name": "minPremium", "in": "query" },
+            { "name": "maxPremium", "in": "query" },
+            { "name": "startDate", "in": "query" },
+            { "name": "endDate", "in": "query" },
+            { "name": "page", "in": "query", "default": 0 },
+            { "name": "size", "in": "query", "default": 10 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Policy Service (Customer/General)",
+      "baseUrl": "/api/policies",
+      "endpoints": [
+        {
+          "path": "/active",
+          "method": "GET",
+          "summary": "Get active policies for customers",
+          "role": "CUSTOMER/GUEST",
+          "parameters": [
+            { "name": "page", "in": "query", "default": 0 },
+            { "name": "size", "in": "query", "default": 10 }
+          ]
+        },
+        {
+          "path": "/active/{id}",
+          "method": "GET",
+          "summary": "Get specific policy by ID",
+          "parameters": [{ "name": "id", "in": "path" }]
+        },
+        {
+          "path": "/purchase",
+          "method": "POST",
+          "summary": "Purchase a policy",
+          "role": "CUSTOMER",
+          "headers": {
+            "X-User-Email": "Customer email",
+            "X-User-Role": "Customer role"
+          },
+          "requestBody": { "type": "PurchasePolicyRequest" }
+        },
+        {
+          "path": "/purchase/my",
+          "method": "GET",
+          "summary": "Get my purchased policies",
+          "role": "CUSTOMER",
+          "headers": { "X-User-Email": "Customer email" }
+        }
+      ]
+    },
+    {
+      "name": "Claims Service",
+      "baseUrl": "/api/claims",
+      "endpoints": [
+        {
+          "path": "/draft",
+          "method": "POST",
+          "summary": "Create a draft claim with documents",
+          "role": "CUSTOMER",
+          "headers": { "X-User-Email": "Customer email" },
+          "parameters": [
+            { "name": "customerPolicyId", "in": "query" },
+            { "name": "claimAmount", "in": "query" },
+            { "name": "files", "in": "formData", "type": "List<MultipartFile>" }
+          ],
+          "consumes": "multipart/form-data"
+        },
+        {
+          "path": "/draft/{id}",
+          "method": "PUT",
+          "summary": "Update a draft claim",
+          "role": "CUSTOMER",
+          "headers": { "X-User-Email": "Customer email" },
+          "parameters": [
+            { "name": "id", "in": "path" },
+            { "name": "claimAmount", "in": "query" },
+            { "name": "files", "in": "formData", "type": "List<MultipartFile>", "required": false }
+          ],
+          "consumes": "multipart/form-data"
+        },
+        {
+          "path": "/{id}/submit",
+          "method": "PATCH",
+          "summary": "Submit a draft claim",
+          "role": "CUSTOMER",
+          "headers": { "X-User-Email": "Customer email" },
+          "parameters": [{ "name": "id", "in": "path" }]
+        },
+        {
+          "path": "/my",
+          "method": "GET",
+          "summary": "Get my claims",
+          "role": "CUSTOMER",
+          "headers": { "X-User-Email": "Customer email" }
+        },
+        {
+          "path": "/{id}/status",
+          "method": "PATCH",
+          "summary": "Update claim status (admin)",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "id", "in": "path" },
+            { "name": "status", "in": "query", "type": "ClaimStatus (DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED, CLOSED)" }
+          ]
+        },
+        {
+          "path": "/",
+          "method": "GET",
+          "summary": "Get all claims (admin) with filters",
+          "role": "ADMIN",
+          "parameters": [
+            { "name": "status", "in": "query" },
+            { "name": "email", "in": "query" },
+            { "name": "startDate", "in": "query" },
+            { "name": "endDate", "in": "query" },
+            { "name": "page", "in": "query", "default": 0 },
+            { "name": "size", "in": "query", "default": 10 }
+          ]
+        },
+        {
+          "path": "/count",
+          "method": "GET",
+          "summary": "Get claim counts by status (admin)",
+          "role": "ADMIN"
+        },
+        {
+          "path": "/payouts",
+          "method": "GET",
+          "summary": "Get total approved claim payouts (admin)",
+          "role": "ADMIN"
+        },
+        {
+          "path": "/document/{docId}",
+          "method": "GET",
+          "summary": "View claim document file (admin)",
+          "role": "ADMIN",
+          "parameters": [{ "name": "docId", "in": "path" }]
+        }
+      ]
+    }
+  ]
+}

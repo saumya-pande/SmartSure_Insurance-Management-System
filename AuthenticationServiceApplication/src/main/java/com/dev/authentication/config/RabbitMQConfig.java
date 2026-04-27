@@ -12,6 +12,7 @@ public class RabbitMQConfig {
 
     public static final String EXCHANGE_NAME = "smartsure.topic.exchange";
     public static final String ROUTING_KEY_REGISTER = "user.registered";
+    public static final String ROUTING_KEY_FORGOT_PASSWORD = "user.forgot.password";
 
     @Bean
     public TopicExchange exchange() {

@@ -39,6 +39,13 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", ex.getMessage(), req);
     }
 
+    // ── Downstream Service errors ──────────────────────────────────────────
+    @ExceptionHandler(DownstreamServiceException.class)
+    public ResponseEntity<ErrorResponse> handleDownstreamServiceException(
+            DownstreamServiceException ex, HttpServletRequest req) {
+        return build(ex.getStatus(), ex.getError(), ex.getMessage(), req);
+    }
+
     // ── Feign errors — decode downstream HTTP errors ─────────────────────────
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<ErrorResponse> handleFeignException(

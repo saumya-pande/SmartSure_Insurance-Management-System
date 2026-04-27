@@ -24,6 +24,8 @@ public class AuthenticationFilter implements GlobalFilter {
                 path.contains("/v3/api-docs") ||
                 path.contains("/swagger-ui") ||
                 path.contains("/swagger-resources") ||
+                path.contains("/api/auth/forgot-password") ||
+                path.contains("/api/auth/reset-password") ||
                 path.contains("/webjars");
     }
 
@@ -38,7 +40,7 @@ public class AuthenticationFilter implements GlobalFilter {
         }
 
         // Allow unauthenticated access to auth + OpenAPI/Swagger endpoints
-        if (isPublicPath(path)) {
+        if (isPublicPath(path) || (exchange.getRequest().getMethod() == HttpMethod.GET && path.startsWith("/api/policies/active"))) {
             return chain.filter(exchange);
         }
 

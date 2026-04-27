@@ -81,4 +81,27 @@ public class EmailService {
             log.error("Failed to send claim status email to {}", toEmail, e);
         }
     }
+
+    public void sendForgotPasswordEmail(String toEmail, String otp) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(toEmail);
+            helper.setSubject("SmartSure: Password Reset OTP");
+
+            String htmlContent = "<h3>Password Reset Request</h3>"
+                    + "<p>You have requested to reset your password.</p>"
+                    + "<p>Use the following OTP to complete the process. This OTP is valid for 5 minutes.</p>"
+                    + "<h2 style='color:blue'>" + otp + "</h2>"
+                    + "<br/><p>If you did not request this, please ignore this email.</p>"
+                    + "<br/><p>Best Regards,</p><p>SmartSure Team</p>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            log.info("Forgot password email sent successfully to {}", toEmail);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send forgot password email to {}", toEmail, e);
+        }
+    }
 }

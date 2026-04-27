@@ -64,8 +64,7 @@ public class BasicPolicyController {
     }
 
     // CUSTOMER — only sees active policies
-    @PreAuthorize("hasRole('CUSTOMER')")
-    @GetMapping
+    @GetMapping("/active")
     @Operation(summary = "Get active policies (customer)")
     public ResponseEntity<Page<BasicPolicyResponse>> getActive(
             @RequestParam(name = "page", defaultValue = "0") int page,
@@ -73,7 +72,7 @@ public class BasicPolicyController {
         return ResponseEntity.ok(service.getActive(PageRequest.of(page, size, Sort.by("id"))));
     }
     
-    @GetMapping("/{id}")
+    @GetMapping("/active/{id}")
     @Operation(summary = "Get policy by id")
     public ResponseEntity<BasicPolicyResponse> getById(@PathVariable(name = "id") Long id) {
         return ResponseEntity.ok(service.getById(id));

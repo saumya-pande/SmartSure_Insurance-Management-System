@@ -16,6 +16,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -32,6 +33,9 @@ class ClaimControllerTest {
 
     @MockitoBean
     private ClaimService claimService;
+
+    @MockitoBean
+    private StringRedisTemplate stringRedisTemplate;
 
     @Test
     void createDraft_success() throws Exception {

@@ -16,12 +16,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.multipart.MultipartFile;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.net.MalformedURLException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -77,6 +75,32 @@ public class KycController {
             @RequestParam(defaultValue = "id") String sortBy
     ) {
         return ResponseEntity.ok(service.getAll(PageRequest.of(page, size, Sort.by(sortBy))));
+    }
+
+    // CUSTOMER — view their own KYC file
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/my/file")
+    @Operation(summary = "View my KYC document file")
+    public ResponseEntity<Resource> getMyKycFile(
+            @Parameter(hidden = true) @RequestHeader("X-User-Email") String email
+    ) throws MalformedURLException {
+        Resource resource = service.getFileAsResource(email);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM) // Browser will try to detect or download
+                .body(resource);
+    }
+
+    // ADMIN — view any KYC file by ID
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{id}/file")
+    @Operation(summary = "View any KYC document file (admin)")
+    public ResponseEntity<Resource> getKycFileById(@PathVariable Long id) throws MalformedURLException {
+        Resource resource = service.getFileAsResourceById(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 
 

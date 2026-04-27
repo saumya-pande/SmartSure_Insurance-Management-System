@@ -15,8 +15,10 @@ import org.springframework.stereotype.Service;
 
 import com.dev.authentication.config.RabbitMQConfig;
 import com.dev.authentication.dto.AuthResponse;
+import com.dev.authentication.dto.ForgotPasswordRequest;
 import com.dev.authentication.dto.LoginRequest;
 import com.dev.authentication.dto.RegisterRequest;
+import com.dev.authentication.dto.ResetPasswordRequest;
 import com.dev.authentication.entity.Role;
 import com.dev.authentication.entity.User;
 import com.dev.authentication.exception.DuplicateResourceException;
@@ -133,6 +135,48 @@ public class AuthService {
     @Cacheable(cacheNames = "users", key = "#email")
     public java.util.Optional<User> getUserByEmail(String email) {
         return repo.findByEmail(email);
+    }
+
+    public String forgotPassword(ForgotPasswordRequest request) {
+        User user = getUserByEmail(request.getEmail())
+                .orElseThrow(() -> new InvalidOperationException("User not found with email: " + request.getEmail()));
+
+        String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+        
+        // Store OTP in Redis for 5 minutes
+        redisTemplate.opsForValue().set("otp:" + user.getEmail(), otp, java.time.Duration.ofMinutes(5));
+
+        Map<String, String> payload = new HashMap<>();
+        payload.put("email", user.getEmail());
+        payload.put("otp", otp);
+
+        try {
+            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_FORGOT_PASSWORD, payload);
+        } catch (Exception e) {
+            log.error("Failed to send forgot password event to RabbitMQ for user: {}. Error: {}", user.getEmail(), e.getMessage());
+        }
+
+        return "OTP sent to your email!";
+    }
+
+    @CacheEvict(cacheNames = "users", key = "#request.email")
+    public String resetPassword(ResetPasswordRequest request) {
+        String storedOtp = redisTemplate.opsForValue().get("otp:" + request.getEmail());
+
+        if (storedOtp == null || !storedOtp.equals(request.getOtp())) {
+            throw new InvalidOperationException("Invalid or expired OTP");
+        }
+
+        User user = getUserByEmail(request.getEmail())
+                .orElseThrow(() -> new InvalidOperationException("User not found"));
+
+        user.setPassword(encoder.encode(request.getNewPassword()));
+        repo.save(user);
+
+        // Delete OTP from Redis
+        redisTemplate.delete("otp:" + request.getEmail());
+
+        return "Password reset successfully!";
     }
 
 }

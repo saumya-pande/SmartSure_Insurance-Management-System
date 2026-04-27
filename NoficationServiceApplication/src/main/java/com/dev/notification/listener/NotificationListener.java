@@ -54,4 +54,12 @@ public class NotificationListener {
         log.info("Received Claim Status Updated Event for Claim ID: {}. Status: {}", claimId, status);
         emailService.sendClaimStatusEmail(email, claimId, status, amount);
     }
+
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_FORGOT_PASSWORD)
+    public void consumeForgotPasswordEvent(Map<String, String> payload) {
+        String email = payload.get("email");
+        String otp = payload.get("otp");
+        log.info("Received Forgot Password Event for user: {}", email);
+        emailService.sendForgotPasswordEmail(email, otp);
+    }
 }

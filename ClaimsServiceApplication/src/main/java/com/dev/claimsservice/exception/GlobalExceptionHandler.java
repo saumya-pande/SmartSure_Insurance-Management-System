@@ -38,6 +38,13 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Invalid Operation", ex.getMessage(), req);
     }
 
+    // ── Downstream Service Errors ─────────────────────────────────────────
+    @ExceptionHandler(DownstreamServiceException.class)
+    public ResponseEntity<ErrorResponse> handleDownstreamServiceException(
+            DownstreamServiceException ex, HttpServletRequest req) {
+        return build(ex.getStatus(), ex.getError(), ex.getMessage(), req);
+    }
+
     // ── 400 Bad Request — @Valid annotation failures ─────────────────────────
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(

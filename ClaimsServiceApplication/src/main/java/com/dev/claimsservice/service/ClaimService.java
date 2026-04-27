@@ -22,6 +22,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -109,6 +112,33 @@ public class ClaimService {
             log.error("Failed to send claim submission event to RabbitMQ for claim ID: {}. Error: {}", claimId, e.getMessage());
         }
         
+        return mapper.toResponse(claimRepo.save(claim));
+    }
+
+    // CUSTOMER — update draft claim
+    @CacheEvict(cacheNames = "claims", allEntries = true)
+    public ClaimResponse updateDraft(String email, Long id, ClaimRequest request,
+                                     List<MultipartFile> files) throws Exception {
+        Claim claim = getClaimForCustomer(email, id);
+
+        if (claim.getStatus() != ClaimStatus.DRAFT) {
+            throw new InvalidOperationException("Only DRAFT claims can be updated");
+        }
+
+        claim.setClaimAmount(request.getClaimAmount());
+
+        if (files != null && !files.isEmpty()) {
+            // Remove old documents from DB (files stay on disk for now, could be improved)
+            docRepo.deleteAll(claim.getDocuments());
+            
+            List<ClaimDocument> newDocs = saveDocuments(files);
+            newDocs.forEach(doc -> {
+                doc.setClaim(claim);
+                docRepo.save(doc);
+            });
+            claim.setDocuments(newDocs);
+        }
+
         return mapper.toResponse(claimRepo.save(claim));
     }
 
@@ -241,5 +271,12 @@ public class ClaimService {
         }
 
         return docs;
+    }
+    public Resource getDocumentAsResource(Long docId) throws MalformedURLException {
+        ClaimDocument doc = docRepo.findById(docId)
+                .orElseThrow(() -> new EntityNotFoundException("ClaimDocument", "id", docId));
+
+        Path filePath = Paths.get(doc.getFilePath());
+        return new UrlResource(filePath.toUri());
     }
 }

@@ -16,10 +16,14 @@ import com.dev.authentication.repository.KycRepository;
 import com.dev.authentication.repository.UserRepository;
 
 import java.nio.file.*;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.net.MalformedURLException;
 
 @Service
 @RequiredArgsConstructor
@@ -37,8 +41,28 @@ public class KycService {
                 .orElseThrow(() -> new EntityNotFoundException("User", "email", email));
 
         // Check if user already has a KYC submission
-        if (repo.findByUserId(user.getId()).isPresent()) {
-            throw new DuplicateResourceException("KYC", "user", email);
+        Optional<Kyc> existingKyc = repo.findByUserId(user.getId());
+        Kyc kyc;
+        
+        if (existingKyc.isPresent()) {
+            kyc = existingKyc.get();
+            if (kyc.getStatus() != KycStatus.REJECTED) {
+                throw new DuplicateResourceException("KYC", "user", email);
+            }
+            // Update existing rejected KYC
+            kyc.setContactNumber(request.getContactNumber());
+            kyc.setDocumentType(request.getDocumentType());
+            kyc.setAddress(request.getAddress());
+            kyc.setStatus(KycStatus.PENDING);
+        } else {
+            // Create new KYC
+            kyc = Kyc.builder()
+                    .user(user)
+                    .status(KycStatus.PENDING)
+                    .contactNumber(request.getContactNumber())
+                    .documentType(request.getDocumentType())
+                    .address(request.getAddress())
+                    .build();
         }
 
         Path uploadPath = Paths.get(UPLOAD_DIR);
@@ -50,15 +74,7 @@ public class KycService {
         Path filePath = uploadPath.resolve(fileName);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        Kyc kyc = Kyc.builder()
-                .contactNumber(request.getContactNumber())
-                .documentType(request.getDocumentType())
-                .documentPath(filePath.toString())
-                .address(request.getAddress())
-                .status(KycStatus.PENDING)
-                .user(user)
-                .build();
-
+        kyc.setDocumentPath(filePath.toString());
         repo.save(kyc);
     }
 
@@ -81,5 +97,23 @@ public class KycService {
                 .orElseThrow(() -> new EntityNotFoundException("KYC", "id", id));
         kyc.setStatus(status);
         repo.save(kyc);
+    }
+    public Resource getFileAsResource(String email) throws MalformedURLException {
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User", "email", email));
+
+        Kyc kyc = repo.findByUserId(user.getId())
+                .orElseThrow(() -> new EntityNotFoundException("KYC", "user", email));
+
+        Path filePath = Paths.get(kyc.getDocumentPath());
+        return new UrlResource(filePath.toUri());
+    }
+
+    public Resource getFileAsResourceById(Long id) throws MalformedURLException {
+        Kyc kyc = repo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("KYC", "id", id));
+
+        Path filePath = Paths.get(kyc.getDocumentPath());
+        return new UrlResource(filePath.toUri());
     }
 }

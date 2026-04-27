@@ -11,6 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import java.net.MalformedURLException;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +39,21 @@ public class ClaimController {
         request.setCustomerPolicyId(customerPolicyId);
         request.setClaimAmount(claimAmount);
         return ResponseEntity.ok(service.createDraft(email, request, files));
+    }
+
+    // CUSTOMER — update draft
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @PutMapping(value = "/draft/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Update a draft claim")
+    public ResponseEntity<ClaimResponse> updateDraft(
+            @Parameter(hidden = true) @RequestHeader("X-User-Email") String email,
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "claimAmount") Double claimAmount,
+            @RequestPart(name = "files", required = false) List<MultipartFile> files
+    ) throws Exception {
+        ClaimRequest request = new ClaimRequest();
+        request.setClaimAmount(claimAmount);
+        return ResponseEntity.ok(service.updateDraft(email, id, request, files));
     }
 
     // CUSTOMER — submit draft
@@ -106,5 +124,15 @@ public class ClaimController {
     @Operation(summary = "Get total approved claim payouts (admin)")
     public ResponseEntity<Map<String, Double>> getApprovedPayouts() {
         return ResponseEntity.ok(service.getApprovedPayouts());
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/document/{docId}")
+    @Operation(summary = "View claim document file (admin)")
+    public ResponseEntity<Resource> getClaimDocument(@PathVariable Long docId) throws MalformedURLException {
+        Resource resource = service.getDocumentAsResource(docId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 }
