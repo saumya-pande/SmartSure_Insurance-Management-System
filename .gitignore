@@ -35,3 +35,6 @@ release.properties
 Thumbs.db
 
 config-repo/
+
+.env
+**/.env
