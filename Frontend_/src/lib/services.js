@@ -4,6 +4,9 @@ export const AuthService = {
   register: (payload) => api.post("/api/auth/register", payload),
   login: (payload) => api.post("/api/auth/login", payload),
   logout: () => api.post("/api/auth/logout"),
+  refresh: (refreshToken) =>
+    api.post("/api/auth/refresh", null, { headers: { "Refresh-Token": refreshToken } }),
+  validate: (token) => api.get("/api/auth/validate", { params: { token } }),
   forgotPassword: (payload) => api.post("/api/auth/forgot-password", payload),
   resetPassword: (payload) => api.post("/api/auth/reset-password", payload),
 };
@@ -14,21 +17,29 @@ export const KycService = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
   myStatus: () => api.get("/api/kyc/my"),
+  myFile: () => api.get("/api/kyc/my/file", { responseType: "blob" }),
+  adminFile: (id) => api.get(`/api/kyc/${id}/file`, { responseType: "blob" }),
 };
 
 export const PolicyService = {
   listActive: (params = {}) => api.get("/api/policies/active", { params }),
   getActive: (id) => api.get(`/api/policies/active/${id}`),
   purchase: (payload) => api.post("/api/policies/purchase", payload),
-  myPurchases: () => api.get("/api/policies/purchase/my"),
+  myPurchases: (params = {}) => api.get("/api/policies/purchase/my", { params }),
 };
 
 export const ClaimService = {
-  fileClaim: (formData) =>
-    api.post("/api/claims", formData, {
+  createDraft: (formData) =>
+    api.post("/api/claims/draft", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
-  myClaims: () => api.get("/api/claims/my"),
+  updateDraft: (id, formData) =>
+    api.put(`/api/claims/draft/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  submit: (id) => api.patch(`/api/claims/${id}/submit`),
+  myClaims: (params = {}) => api.get("/api/claims/my", { params }),
+  document: (docId) => api.get(`/api/claims/document/${docId}`, { responseType: "blob" }),
 };
 
 // Admin (per rule #21 — uses /api/admin/* exactly as spec'd in API map)
@@ -59,7 +70,13 @@ export const AdminPolicyService = {
 };
 
 export const AdminClaimService = {
-  list: (params = {}) => api.get("/api/admin/claims", { params }),
+  list: (params = {}) => api.get("/api/claims", { params }),
   override: (id, status) =>
-    api.patch(`/api/admin/claims/${id}/status`, null, { params: { status } }),
+    api.patch(`/api/claims/${id}/status`, null, { params: { status } }),
+  count: () => api.get("/api/claims/count"),
+  payouts: () => api.get("/api/claims/payouts"),
+};
+
+export const AdminDashboardService = {
+  summary: () => api.get("/api/dashboard"),
 };

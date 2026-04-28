@@ -2,6 +2,7 @@
   "name": "smartsure",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:8080",
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@reduxjs/toolkit": "^2.2.7",
@@ -22,8 +23,8 @@
     "tailwindcss": "^3.4.13"
   },
   "scripts": {
-    "dev": "PORT=8080 BROWSER=none HOST=0.0.0.0 DANGEROUSLY_DISABLE_HOST_CHECK=true WDS_SOCKET_PORT=0 react-scripts start",
-    "start": "PORT=8080 BROWSER=none HOST=0.0.0.0 DANGEROUSLY_DISABLE_HOST_CHECK=true WDS_SOCKET_PORT=0 react-scripts start",
+    "dev": "set PORT=3000&& set BROWSER=none&& set HOST=0.0.0.0&& set DANGEROUSLY_DISABLE_HOST_CHECK=true&& set WDS_SOCKET_PORT=0&& react-scripts start",
+    "start": "set PORT=3000&& set BROWSER=none&& set HOST=0.0.0.0&& set DANGEROUSLY_DISABLE_HOST_CHECK=true&& set WDS_SOCKET_PORT=0&& react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --watchAll=false",
     "eject": "react-scripts eject"

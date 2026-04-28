@@ -1,25 +1,21 @@
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  ShieldCheck,
-  ClipboardList,
-} from "lucide-react";
 import AppNavbar from "../components/layout/AppNavbar";
 import Sidebar from "../components/layout/Sidebar";
+import Icon from "../components/ui/Icon";
 
 const NAV = [
-  { to: "/admin", label: "Overview", icon: LayoutDashboard, end: true, group: "MAIN" },
-  { to: "/admin/policies", label: "Policies", icon: FileText, group: "MAIN" },
-  { to: "/admin/claims", label: "Claims", icon: ClipboardList, group: "OPERATIONS" },
-  { to: "/admin/kyc", label: "KYC Management", icon: ShieldCheck, group: "OPERATIONS" },
-  { to: "/admin/users", label: "Users", icon: Users, group: "OPERATIONS" },
+  { to: "/admin", label: "Overview", icon: () => <Icon name="clipboard" />, end: true, group: "MAIN" },
+  { to: "/admin/policies", label: "Policies", icon: () => <Icon name="file" />, group: "MAIN" },
+  { to: "/admin/purchases", label: "Purchased Policies", icon: () => <Icon name="wallet" />, group: "MAIN" },
+  { to: "/admin/claims", label: "Claims", icon: () => <Icon name="clipboard" />, group: "OPERATIONS" },
+  { to: "/admin/kyc", label: "KYC Management", icon: () => <Icon name="shield" />, group: "OPERATIONS" },
+  { to: "/admin/users", label: "Users", icon: () => <Icon name="users" />, group: "OPERATIONS" },
 ];
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
+
   return (
     <div className="min-h-screen flex flex-col bg-bg text-text">
       <AppNavbar onMenu={() => setOpen(true)} admin />

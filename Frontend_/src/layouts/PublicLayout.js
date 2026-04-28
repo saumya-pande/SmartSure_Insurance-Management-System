@@ -1,8 +1,8 @@
 import React from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Shield } from "lucide-react";
 import { selectAuth } from "../store/slices/authSlice";
+import Icon from "../components/ui/Icon";
 
 export default function PublicLayout() {
   const { token, user } = useSelector(selectAuth);
@@ -20,13 +20,15 @@ export default function PublicLayout() {
             aria-label="SmartSure home"
           >
             <span className="grid place-items-center w-8 h-8 rounded-md bg-brand text-white">
-              <Shield size={18} />
+              <Icon name="shield" />
             </span>
             SmartSure
           </Link>
 
           <nav className="hidden sm:flex items-center gap-1 ml-2">
-            <NavItem to="/" end>Home</NavItem>
+            <NavItem to="/" end>
+              Home
+            </NavItem>
           </nav>
 
           <div className="ml-auto flex items-center gap-2">

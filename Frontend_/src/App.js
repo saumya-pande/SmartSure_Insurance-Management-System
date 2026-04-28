@@ -1,7 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ToastHost from "./components/ui/ToastHost";
-import ThemeToggleFAB from "./components/ui/ThemeToggleFAB";
 import PageLoader from "./components/ui/PageLoader";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicLayout from "./layouts/PublicLayout";
@@ -19,21 +18,23 @@ const CustomerDashboard = lazy(() => import("./pages/customer/CustomerDashboard"
 const BrowsePolicies = lazy(() => import("./pages/customer/BrowsePolicies"));
 const PolicyDetail = lazy(() => import("./pages/customer/PolicyDetail"));
 const MyPolicies = lazy(() => import("./pages/customer/MyPolicies"));
+const MyClaims = lazy(() => import("./pages/customer/MyClaims"));
 const FileClaim = lazy(() => import("./pages/customer/FileClaim"));
 const MyKyc = lazy(() => import("./pages/customer/MyKyc"));
+const CustomerProfile = lazy(() => import("./pages/customer/CustomerProfile"));
 
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminKyc = lazy(() => import("./pages/admin/AdminKyc"));
 const AdminPolicies = lazy(() => import("./pages/admin/AdminPolicies"));
 const AdminClaims = lazy(() => import("./pages/admin/AdminClaims"));
+const AdminPurchases = lazy(() => import("./pages/admin/AdminPurchases"));
 
 export default function App() {
   return (
     <>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Public */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
@@ -42,7 +43,6 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
           </Route>
 
-          {/* Customer */}
           <Route
             element={
               <ProtectedRoute roles={["CUSTOMER"]}>
@@ -54,11 +54,12 @@ export default function App() {
             <Route path="/app/policies" element={<BrowsePolicies />} />
             <Route path="/app/policies/:id" element={<PolicyDetail />} />
             <Route path="/app/my-policies" element={<MyPolicies />} />
+            <Route path="/app/claims" element={<MyClaims />} />
             <Route path="/app/claims/new" element={<FileClaim />} />
             <Route path="/app/kyc" element={<MyKyc />} />
+            <Route path="/app/profile" element={<CustomerProfile />} />
           </Route>
 
-          {/* Admin */}
           <Route
             element={
               <ProtectedRoute roles={["ADMIN"]}>
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/kyc" element={<AdminKyc />} />
             <Route path="/admin/policies" element={<AdminPolicies />} />
+            <Route path="/admin/purchases" element={<AdminPurchases />} />
             <Route path="/admin/claims" element={<AdminClaims />} />
           </Route>
 
@@ -78,7 +80,6 @@ export default function App() {
         </Routes>
       </Suspense>
       <ToastHost />
-      <ThemeToggleFAB />
     </>
   );
 }

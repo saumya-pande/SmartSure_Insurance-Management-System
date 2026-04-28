@@ -31,6 +31,8 @@ public class DashboardResponse {
     private long totalPoliciesSold;
     private long activePoliciesSold;
     private Map<String, Long> policiesSoldByType;  // HOME / VEHICLE counts
+    private double grossRevenue;
+    private double totalPayouts;
     private double totalRevenue;
 
     // claims

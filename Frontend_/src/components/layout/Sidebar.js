@@ -1,7 +1,8 @@
 import React, { useEffect, useCallback } from "react";
 import { NavLink } from "react-router-dom";
+import Icon from "../ui/Icon";
 
-export default function Sidebar({ items, open, onClose }) {
+export default function Sidebar({ items, open, onClose, title = "Navigation" }) {
   // Close on Escape
   useEffect(() => {
     if (!open) return undefined;
@@ -76,8 +77,24 @@ export default function Sidebar({ items, open, onClose }) {
             onClick={onClose}
             aria-hidden="true"
           />
-          <aside className="relative h-full w-72 bg-surface border-r border-border shadow-elevated">
-            {content}
+          <aside
+            className="relative h-full w-[min(20rem,88vw)] bg-surface border-r border-border shadow-elevated flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+          >
+            <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+              <p className="text-sm font-semibold">{title}</p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-border hover:bg-surface-2"
+                aria-label="Close navigation"
+              >
+                <Icon name="close" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0">{content}</div>
           </aside>
         </div>
       )}

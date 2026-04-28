@@ -1,11 +1,28 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Zap, Lock, ArrowRight } from "lucide-react";
+import Icon from "../components/ui/Icon";
+
+const FEATURES = [
+  {
+    icon: "shield",
+    title: "Real coverage",
+    body: "Home and vehicle policies under trusted business rules, with terms customers can read quickly.",
+  },
+  {
+    icon: "bolt",
+    title: "Fast claims",
+    body: "Draft claim, upload evidence, submit when ready, then track every status update in one place.",
+  },
+  {
+    icon: "lock",
+    title: "Verified identity",
+    body: "Built-in KYC protects purchases, claims, and admin review without adding visual clutter.",
+  },
+];
 
 export default function Landing() {
   return (
     <div>
-      {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-bg via-bg to-brand-soft/30" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
@@ -20,9 +37,8 @@ export default function Landing() {
               <span className="text-brand">Confidence you can feel.</span>
             </h1>
             <p className="mt-5 text-lg text-text-muted max-w-xl">
-              SmartSure brings home and vehicle insurance into one calm,
-              transparent dashboard — buy policies, file claims, and track
-              everything in real time.
+              SmartSure brings home and vehicle insurance into one clear dashboard. Buy policies,
+              complete KYC, file claims, and track business status without tables or clutter.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -30,7 +46,7 @@ export default function Landing() {
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-md bg-brand text-white font-semibold hover:bg-brand-hover transition-colors"
               >
                 Create an account
-                <ArrowRight size={16} />
+                <Icon name="arrow-right" />
               </Link>
               <Link
                 to="/login"
@@ -48,21 +64,17 @@ export default function Landing() {
                   ACTIVE
                 </span>
               </div>
-              <h3 className="font-heading text-2xl font-semibold mt-2">
-                SmartSure Vehicle • Premium
-              </h3>
+              <h3 className="font-heading text-2xl font-semibold mt-2">SmartSure Vehicle Premium</h3>
               <p className="text-sm text-text-muted mt-1">Renews 03 Jul 2026</p>
               <div className="mt-6 grid grid-cols-3 gap-3">
                 {[
-                  { k: "Coverage", v: "$50,000" },
-                  { k: "Premium", v: "$84/mo" },
-                  { k: "Deductible", v: "$500" },
-                ].map((s) => (
-                  <div key={s.k} className="rounded-lg bg-surface-2 p-3">
-                    <p className="text-[11px] uppercase text-text-subtle tracking-wider">
-                      {s.k}
-                    </p>
-                    <p className="font-heading text-xl font-semibold mt-1">{s.v}</p>
+                  { k: "Coverage", v: "₹50,000" },
+                  { k: "Premium", v: "₹84/mo" },
+                  { k: "Deductible", v: "₹500" },
+                ].map((stat) => (
+                  <div key={stat.k} className="rounded-lg bg-surface-2 p-3">
+                    <p className="text-[11px] uppercase text-text-subtle tracking-wider">{stat.k}</p>
+                    <p className="font-heading text-xl font-semibold mt-1">{stat.v}</p>
                   </div>
                 ))}
               </div>
@@ -77,54 +89,30 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features */}
       <section className="border-t border-border bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold tracking-widest uppercase text-brand">
-              Built for clarity
-            </p>
+            <p className="text-xs font-semibold tracking-widest uppercase text-brand">Built for clarity</p>
             <h2 className="font-heading text-3xl sm:text-4xl font-semibold mt-2">
-              Everything you need. Nothing you don't.
+              Everything needed. Nothing noisy.
             </h2>
           </div>
           <div className="mt-10 grid md:grid-cols-3 gap-4">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div
-                  key={f.title}
-                  className="rounded-2xl border border-border bg-bg p-6 hover:border-border-strong transition-colors"
-                >
-                  <div className="grid place-items-center w-10 h-10 rounded-md bg-brand-soft text-brand">
-                    <Icon size={18} />
-                  </div>
-                  <h3 className="font-heading text-xl font-semibold mt-4">{f.title}</h3>
-                  <p className="text-sm text-text-muted mt-1">{f.body}</p>
+            {FEATURES.map((feature) => (
+              <div
+                key={feature.title}
+                className="rounded-2xl border border-border bg-bg p-6 hover:border-border-strong transition-colors"
+              >
+                <div className="grid place-items-center w-10 h-10 rounded-md bg-brand-soft text-brand">
+                  <Icon name={feature.icon} />
                 </div>
-              );
-            })}
+                <h3 className="font-heading text-xl font-semibold mt-4">{feature.title}</h3>
+                <p className="text-sm text-text-muted mt-1">{feature.body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
     </div>
   );
 }
-
-const FEATURES = [
-  {
-    icon: ShieldCheck,
-    title: "Real coverage",
-    body: "Home and vehicle policies underwritten by trusted partners, with terms you can actually read.",
-  },
-  {
-    icon: Zap,
-    title: "Fast claims",
-    body: "File a claim in minutes, upload evidence, and track every status change in real time.",
-  },
-  {
-    icon: Lock,
-    title: "Verified identity",
-    body: "Built-in KYC keeps your account secure without slowing you down.",
-  },
-];

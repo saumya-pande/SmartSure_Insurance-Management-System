@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Moon, Sun } from "lucide-react";
+import Icon from "./Icon";
 
 const KEY = "smartsure_theme";
 
-export default function ThemeToggleFAB() {
-  // Default LIGHT — no OS preference detection (rule #9)
+export default function ThemeToggleFAB({ floating = true, className = "" }) {
   const [dark, setDark] = useState(() => {
     try {
       return localStorage.getItem(KEY) === "dark";
@@ -24,16 +23,20 @@ export default function ThemeToggleFAB() {
     }
   }, [dark]);
 
-  const toggle = useCallback(() => setDark((d) => !d), []);
+  const toggle = useCallback(() => setDark((value) => !value), []);
+
+  const classes = floating
+    ? "fixed z-50 bottom-5 right-5 w-12 h-12 rounded-full bg-surface border border-border shadow-elevated grid place-items-center text-text hover:bg-surface-2 transition-colors"
+    : "inline-flex items-center justify-center w-10 h-10 rounded-full border border-border bg-surface text-text hover:bg-surface-2 transition-colors";
 
   return (
     <button
       type="button"
       onClick={toggle}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      className="fixed z-50 bottom-5 right-5 w-12 h-12 rounded-full bg-surface border border-border shadow-elevated grid place-items-center text-text hover:bg-surface-2 transition-colors"
+      className={`${classes} ${className}`.trim()}
     >
-      {dark ? <Sun size={18} /> : <Moon size={18} />}
+      {dark ? <Icon name="sun" /> : <Icon name="moon" />}
     </button>
   );
 }

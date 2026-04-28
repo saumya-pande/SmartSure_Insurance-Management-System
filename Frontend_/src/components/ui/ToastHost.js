@@ -1,13 +1,13 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { CheckCircle2, AlertTriangle, XCircle, Info, X } from "lucide-react";
 import { dismissToast, selectToasts } from "../../store/slices/toastSlice";
+import Icon from "./Icon";
 
 const ICONS = {
-  success: CheckCircle2,
-  warning: AlertTriangle,
-  danger: XCircle,
-  info: Info,
+  success: "check-circle",
+  warning: "triangle-alert",
+  danger: "triangle-alert",
+  info: "info",
 };
 
 const STYLES = {
@@ -22,8 +22,8 @@ export default function ToastHost() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const timers = toasts.map((t) =>
-      setTimeout(() => dispatch(dismissToast(t.id)), t.duration || 4000)
+    const timers = toasts.map((toast) =>
+      setTimeout(() => dispatch(dismissToast(toast.id)), toast.duration || 4000)
     );
     return () => timers.forEach(clearTimeout);
   }, [toasts, dispatch]);
@@ -34,26 +34,23 @@ export default function ToastHost() {
       role="status"
       aria-live="polite"
     >
-      {toasts.map((t) => {
-        const Icon = ICONS[t.variant] || Info;
-        return (
-          <div
-            key={t.id}
-            className={`flex items-start gap-3 px-4 py-3 rounded-lg border shadow-elevated bg-surface ${STYLES[t.variant] || STYLES.info}`}
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          className={`flex items-start gap-3 px-4 py-3 rounded-lg border shadow-elevated bg-surface ${STYLES[toast.variant] || STYLES.info}`}
+        >
+          <Icon name={ICONS[toast.variant] || "info"} className="mt-0.5 shrink-0" />
+          <p className="flex-1 text-sm text-text">{toast.message}</p>
+          <button
+            type="button"
+            onClick={() => dispatch(dismissToast(toast.id))}
+            aria-label="Dismiss notification"
+            className="text-text-muted hover:text-text"
           >
-            <Icon size={18} className="mt-0.5 shrink-0" />
-            <p className="flex-1 text-sm text-text">{t.message}</p>
-            <button
-              type="button"
-              onClick={() => dispatch(dismissToast(t.id))}
-              aria-label="Dismiss notification"
-              className="text-text-muted hover:text-text"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        );
-      })}
+            <Icon name="close" />
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

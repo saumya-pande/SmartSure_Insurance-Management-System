@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Loader2, LogOut, X } from "lucide-react";
 import { AuthService } from "../../lib/services";
 import { clearAuth } from "../../store/slices/authSlice";
 import { pushToast } from "../../store/slices/toastSlice";
+import Icon from "./Icon";
 
 export default function LogoutDialog({ open, onClose }) {
   const [loading, setLoading] = useState(false);
@@ -13,8 +13,8 @@ export default function LogoutDialog({ open, onClose }) {
 
   useEffect(() => {
     if (!open) return undefined;
-    const onKey = (e) => {
-      if (e.key === "Escape" && !loading) onClose();
+    const onKey = (event) => {
+      if (event.key === "Escape" && !loading) onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -25,7 +25,7 @@ export default function LogoutDialog({ open, onClose }) {
     try {
       await AuthService.logout();
     } catch {
-      // ignore — we still log out client-side
+      /* noop */
     } finally {
       dispatch(clearAuth());
       dispatch(pushToast({ message: "You have been signed out.", variant: "info" }));
@@ -39,7 +39,11 @@ export default function LogoutDialog({ open, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[90] grid place-items-center px-4">
-      <div className="absolute inset-0 bg-black/50" onClick={loading ? undefined : onClose} aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={loading ? undefined : onClose}
+        aria-hidden="true"
+      />
       <div
         role="dialog"
         aria-modal="true"
@@ -53,18 +57,18 @@ export default function LogoutDialog({ open, onClose }) {
           disabled={loading}
           className="absolute top-3 right-3 p-1.5 rounded-md text-text-muted hover:bg-surface-2"
         >
-          <X size={16} />
+          <Icon name="close" />
         </button>
         <div className="flex items-start gap-4">
           <div className="grid place-items-center w-10 h-10 rounded-full bg-danger-soft text-danger shrink-0">
-            <LogOut size={18} />
+            <Icon name="logout" />
           </div>
           <div className="flex-1">
             <h2 id="logout-title" className="font-heading text-xl font-semibold">
               Sign out of SmartSure?
             </h2>
             <p className="mt-1 text-sm text-text-muted">
-              You'll need to sign in again to access your dashboard, policies, and claims.
+              You&apos;ll need to sign in again to access your dashboard, policies, and claims.
             </p>
           </div>
         </div>
@@ -83,7 +87,7 @@ export default function LogoutDialog({ open, onClose }) {
             disabled={loading}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md bg-danger text-white hover:opacity-95 disabled:opacity-60"
           >
-            {loading && <Loader2 size={16} className="animate-spin" />}
+            {loading && <Icon name="spinner" spin />}
             Sign out
           </button>
         </div>

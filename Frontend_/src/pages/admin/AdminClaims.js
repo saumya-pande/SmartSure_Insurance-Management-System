@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useCallback, memo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch } from "react-redux";
-import { ClipboardList } from "lucide-react";
-import { AdminClaimService } from "../../lib/services";
+import { AdminClaimService, ClaimService } from "../../lib/services";
 import { extractErrorMessage } from "../../lib/api";
 import ErrorAlert from "../../components/ui/ErrorAlert";
 import StatusBadge from "../../components/ui/StatusBadge";
@@ -12,13 +11,14 @@ import Field from "../../components/ui/Field";
 import Button from "../../components/ui/Button";
 import { pushToast } from "../../store/slices/toastSlice";
 import { CLAIM_STATUSES, formatCurrency } from "../../lib/constants";
+import { openBlobResponse } from "../../lib/file";
 
 const PAGE_SIZE = 10;
 
 export default function AdminClaims() {
   const dispatch = useDispatch();
   const [page, setPage] = useState(0);
-  const [filter, setFilter] = useState("");
+  const [filters, setFilters] = useState({ status: "", email: "", startDate: "", endDate: "" });
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
@@ -27,14 +27,17 @@ export default function AdminClaims() {
     setError("");
     try {
       const params = { page, size: PAGE_SIZE };
-      if (filter) params.status = filter;
-      const { data: res } = await AdminClaimService.list(params);
-      setData(res);
+      if (filters.status) params.status = filters.status;
+      if (filters.email) params.email = filters.email;
+      if (filters.startDate) params.startDate = filters.startDate;
+      if (filters.endDate) params.endDate = filters.endDate;
+      const { data: response } = await AdminClaimService.list(params);
+      setData(response);
     } catch (err) {
       setError(extractErrorMessage(err, "Could not load claims."));
       setData({ content: [], totalPages: 1, number: 0 });
     }
-  }, [page, filter]);
+  }, [filters, page]);
 
   useEffect(() => {
     load();
@@ -53,7 +56,19 @@ export default function AdminClaims() {
     [dispatch, load]
   );
 
-  const list = data?.content || [];
+  const openDocument = useCallback(
+    async (docId) => {
+      try {
+        const response = await ClaimService.document(docId);
+        openBlobResponse(response);
+      } catch (err) {
+        dispatch(pushToast({ message: extractErrorMessage(err, "Could not open document."), variant: "danger" }));
+      }
+    },
+    [dispatch]
+  );
+
+  const claims = data?.content || [];
 
   return (
     <div className="space-y-6">
@@ -62,76 +77,72 @@ export default function AdminClaims() {
         <h1 className="font-heading text-4xl font-semibold mt-1">Claims</h1>
       </header>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <Field
-          as="select"
-          id="claim-filter"
-          value={filter}
-          onChange={(e) => { setFilter(e.target.value); setPage(0); }}
-          className="max-w-xs"
-        >
+      <section className="rounded-2xl border border-border bg-surface p-4 grid md:grid-cols-4 gap-3">
+        <Field as="select" id="claim-status" label="Status" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
           <option value="">All statuses</option>
-          {CLAIM_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          {CLAIM_STATUSES.map((status) => (
+            <option key={status} value={status}>{status}</option>
+          ))}
         </Field>
-      </div>
+        <Field id="claim-email" label="Customer email" value={filters.email} onChange={(event) => setFilters((current) => ({ ...current, email: event.target.value }))} />
+        <Field id="claim-start" label="Start date" type="date" value={filters.startDate} onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))} />
+        <Field id="claim-end" label="End date" type="date" value={filters.endDate} onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))} />
+      </section>
 
       {error && <ErrorAlert message={error} onRetry={load} />}
 
       {data === null ? (
         <ListCardSkeleton />
-      ) : list.length === 0 ? (
-        <EmptyState icon={ClipboardList} title="No claims" />
+      ) : claims.length === 0 ? (
+        <EmptyState icon="clipboard" title="No claims" />
       ) : (
         <ul className="space-y-3">
-          {list.map((c) => (
-            <ClaimRow key={c.id} claim={c} onOverride={override} />
+          {claims.map((claim) => (
+            <li key={claim.id} className="rounded-xl border border-border bg-surface p-4 flex flex-wrap items-center gap-4">
+              <div className="flex-1 min-w-[240px]">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold">Claim #{claim.id}</h3>
+                  <StatusBadge status={claim.status || "SUBMITTED"} />
+                </div>
+                <p className="text-sm text-text-muted mt-0.5">
+                  {claim.customerEmail || "Unknown"} · Policy #{claim.customerPolicyId}
+                </p>
+                <p className="text-sm text-text-muted">
+                  {formatCurrency(claim.claimAmount || 0)} · {new Date(claim.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(claim.documents || []).map((document, index) => (
+                  <Button
+                    key={document.id || `${claim.id}-${index}`}
+                    variant="outline"
+                    onClick={() => openDocument(document.id)}
+                  >
+                    {document.fileName || `Document ${index + 1}`}
+                  </Button>
+                ))}
+                <Field
+                  as="select"
+                  id={`override-${claim.id}`}
+                  defaultValue=""
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value) override(claim, value);
+                    event.target.value = "";
+                  }}
+                >
+                  <option value="">Override status</option>
+                  {CLAIM_STATUSES.map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </Field>
+              </div>
+            </li>
           ))}
         </ul>
       )}
 
-      {data && (
-        <Pagination
-          page={data.number ?? page}
-          totalPages={data.totalPages ?? 1}
-          onChange={setPage}
-        />
-      )}
+      {data && <Pagination page={data.number ?? page} totalPages={data.totalPages ?? 1} onChange={setPage} />}
     </div>
   );
 }
-
-const ClaimRow = memo(function ClaimRow({ claim, onOverride }) {
-  return (
-    <li className="rounded-xl border border-border bg-surface p-4 flex flex-wrap items-center gap-4">
-      <div className="grid place-items-center w-10 h-10 rounded-md bg-brand-soft text-brand">
-        <ClipboardList size={18} />
-      </div>
-      <div className="flex-1 min-w-[200px]">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="font-semibold">Claim #{claim.id}</h3>
-          <StatusBadge status={claim.status || "SUBMITTED"} />
-        </div>
-        <p className="text-sm text-text-muted mt-0.5">
-          {claim.userEmail || claim.email || "—"} · {formatCurrency(claim.claimAmount || 0)}
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        <Field
-          as="select"
-          id={`override-${claim.id}`}
-          defaultValue=""
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v) onOverride(claim, v);
-            e.target.value = "";
-          }}
-        >
-          <option value="">Override status…</option>
-          {CLAIM_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-        </Field>
-        <Button variant="outline" onClick={() => onOverride(claim, "APPROVED")}>Approve</Button>
-        <Button variant="ghost" className="text-danger" onClick={() => onOverride(claim, "REJECTED")}>Reject</Button>
-      </div>
-    </li>
-  );
-});

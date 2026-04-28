@@ -1,51 +1,57 @@
 import React, { useEffect, useState, useCallback, memo } from "react";
 import { Link } from "react-router-dom";
-import { Car, FileText, Home } from "lucide-react";
 import { PolicyService } from "../../lib/services";
 import { extractErrorMessage } from "../../lib/api";
 import ErrorAlert from "../../components/ui/ErrorAlert";
 import StatusBadge from "../../components/ui/StatusBadge";
 import { ListCardSkeleton } from "../../components/ui/Skeleton";
 import EmptyState from "../../components/ui/EmptyState";
-import { formatCurrency } from "../../lib/constants";
+import Pagination from "../../components/ui/Pagination";
+import { formatCurrency, formatStatusLabel } from "../../lib/constants";
+import Icon from "../../components/ui/Icon";
+
+const PAGE_SIZE = 8;
 
 export default function MyPolicies() {
-  const [items, setItems] = useState(null);
+  const [page, setPage] = useState(0);
+  const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    setItems(null);
+    setData(null);
     setError("");
     try {
-      const { data } = await PolicyService.myPurchases();
-      setItems(Array.isArray(data) ? data : data?.content || []);
+      const { data: response } = await PolicyService.myPurchases({ page, size: PAGE_SIZE });
+      setData(response);
     } catch (err) {
       setError(extractErrorMessage(err, "Could not load your policies."));
-      setItems([]);
+      setData({ content: [], totalPages: 1, number: 0 });
     }
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  const policies = data?.content || [];
 
   return (
     <div className="space-y-6">
       <header>
         <p className="text-xs uppercase tracking-widest text-text-subtle">Your portfolio</p>
         <h1 className="font-heading text-4xl font-semibold mt-1">My policies</h1>
-        <p className="mt-2 text-text-muted">Active and historical policies on your account.</p>
+        <p className="mt-2 text-text-muted">Purchased coverage, active dates, and next action.</p>
       </header>
 
       {error && <ErrorAlert message={error} onRetry={load} />}
 
-      {items === null ? (
+      {data === null ? (
         <ListCardSkeleton />
-      ) : items.length === 0 ? (
+      ) : policies.length === 0 ? (
         <EmptyState
-          icon={FileText}
+          icon="file"
           title="No policies yet"
-          description="Browse our marketplace to find a policy that fits."
+          description="Browse active policies and purchase coverage first."
           action={
             <Link
               to="/app/policies"
@@ -57,46 +63,47 @@ export default function MyPolicies() {
         />
       ) : (
         <ul className="space-y-3">
-          {items.map((p) => (
-            <PurchasedRow key={p.id} purchase={p} />
+          {policies.map((policy) => (
+            <PolicyRow key={policy.id} policy={policy} />
           ))}
         </ul>
+      )}
+
+      {data && (
+        <Pagination page={data.number ?? page} totalPages={data.totalPages ?? 1} onChange={setPage} />
       )}
     </div>
   );
 }
 
-const PurchasedRow = memo(function PurchasedRow({ purchase }) {
-  const type = String(purchase.policyType || purchase.type || "").toUpperCase();
-  const Icon = type === "VEHICLE" ? Car : Home;
+const PolicyRow = memo(function PolicyRow({ policy }) {
+  const isVehicle = String(policy.policyType).toUpperCase() === "VEHICLE";
+
   return (
     <li className="rounded-xl border border-border bg-surface p-4 flex flex-wrap items-center gap-4">
       <div className="grid place-items-center w-11 h-11 rounded-md bg-brand-soft text-brand">
-        <Icon size={18} />
+        <Icon name={isVehicle ? "vehicle" : "home"} />
       </div>
-      <div className="flex-1 min-w-[200px]">
+      <div className="flex-1 min-w-[220px]">
         <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="font-heading text-lg font-semibold">
-            {purchase.policyName || purchase.name || `Policy #${purchase.policyId || purchase.id}`}
-          </h3>
-          <StatusBadge status={type || "POLICY"} />
-          <StatusBadge status={purchase.status || "ACTIVE"} />
+          <h3 className="font-heading text-lg font-semibold">{policy.policyName}</h3>
+          <StatusBadge status={policy.policyType} />
+          <StatusBadge status={policy.status} />
         </div>
-        <p className="text-sm text-text-muted mt-0.5">
-          Purchased on{" "}
-          {purchase.purchaseDate
-            ? new Date(purchase.purchaseDate).toLocaleDateString()
-            : "—"}
+        <p className="text-sm text-text-muted mt-1">
+          Holder: {policy.holderName} · Property ID: {policy.propertyIdentifier}
+        </p>
+        <p className="text-sm text-text-muted">
+          {new Date(policy.startDate).toLocaleDateString()} to{" "}
+          {new Date(policy.endDate).toLocaleDateString()} · {formatStatusLabel(policy.status)}
         </p>
       </div>
       <div className="text-right">
         <p className="text-xs text-text-subtle uppercase tracking-wider">Premium</p>
-        <p className="font-heading text-xl font-semibold">
-          {formatCurrency(purchase.premium || purchase.premiumAmount || 0)}
-        </p>
+        <p className="font-heading text-xl font-semibold">{formatCurrency(policy.premiumAmount)}</p>
       </div>
       <Link
-        to={`/app/claims/new?policy=${purchase.id}`}
+        to={`/app/claims/new?policy=${policy.id}`}
         className="px-3 py-2 text-sm font-semibold rounded-md border border-border hover:bg-surface-2"
       >
         File claim

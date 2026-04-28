@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Menu, Shield, LogOut, User } from "lucide-react";
 import { selectAuth } from "../../store/slices/authSlice";
 import LogoutDialog from "../ui/LogoutDialog";
+import Icon from "../ui/Icon";
+import ThemeToggleFAB from "../ui/ThemeToggleFAB";
 
 export default function AppNavbar({ onMenu, admin }) {
   const { user } = useSelector(selectAuth);
@@ -23,7 +24,7 @@ export default function AppNavbar({ onMenu, admin }) {
             aria-label="SmartSure home"
           >
             <span className="grid place-items-center w-8 h-8 rounded-md bg-brand text-white">
-              <Shield size={18} />
+              <Icon name="shield" />
             </span>
             <span className="hidden xs:inline sm:inline">SmartSure</span>
           </Link>
@@ -34,7 +35,7 @@ export default function AppNavbar({ onMenu, admin }) {
             className="lg:hidden ml-1 p-2 rounded-md text-text-muted hover:bg-surface-2"
             aria-label="Open menu"
           >
-            <Menu size={20} />
+            <Icon name="menu" />
           </button>
 
           {admin && (
@@ -44,8 +45,9 @@ export default function AppNavbar({ onMenu, admin }) {
           )}
 
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggleFAB floating={false} />
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-surface-2 text-sm">
-              <User size={14} className="text-text-muted" />
+              <Icon name="user" className="text-text-muted" />
               <span className="font-medium truncate max-w-[140px]">
                 {user?.name || user?.email || "Account"}
               </span>
@@ -56,7 +58,7 @@ export default function AppNavbar({ onMenu, admin }) {
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-md border border-border hover:bg-surface-2"
               aria-label="Sign out"
             >
-              <LogOut size={16} />
+              <Icon name="logout" />
               <span className="hidden sm:inline">Sign out</span>
             </button>
           </div>

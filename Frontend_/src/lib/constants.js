@@ -1,6 +1,8 @@
 export const ROLES = { ADMIN: "ADMIN", CUSTOMER: "CUSTOMER" };
 
 export const POLICY_TYPES = ["HOME", "VEHICLE"];
+export const PURCHASE_STATUSES = ["ACTIVE", "EXPIRED", "CANCELLED"];
+export const USER_STATUS_OPTIONS = ["ACTIVE", "INACTIVE"];
 
 export const POLICY_STATUSES = [
   "ACTIVE",
@@ -32,9 +34,20 @@ export const statusVariant = (status) => {
 
 export const formatCurrency = (n) => {
   const v = Number(n || 0);
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
+    currency: "INR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(v);
+};
+
+export const formatStatusLabel = (value, fallback = "Unknown") => {
+  const raw = String(value || "").trim();
+  if (!raw) return fallback;
+  return raw
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 };

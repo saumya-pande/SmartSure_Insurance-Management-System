@@ -1,26 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import * as yup from "yup";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { Upload } from "lucide-react";
 import Field from "../../components/ui/Field";
 import Button from "../../components/ui/Button";
 import ErrorAlert from "../../components/ui/ErrorAlert";
 import { ClaimService, PolicyService } from "../../lib/services";
 import { pushToast } from "../../store/slices/toastSlice";
 import { extractErrorMessage } from "../../lib/api";
-
-const schema = yup.object({
-  customerPolicyId: yup.number().typeError("Select a policy").required("Select a policy"),
-  claimAmount: yup
-    .number()
-    .typeError("Enter a number")
-    .positive("Must be positive")
-    .required("Claim amount is required"),
-  description: yup.string().trim().max(1000, "Max 1000 characters"),
-});
+import Icon from "../../components/ui/Icon";
 
 export default function FileClaim() {
   const dispatch = useDispatch();
@@ -31,26 +19,23 @@ export default function FileClaim() {
   const [policies, setPolicies] = useState([]);
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState("");
 
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(schema),
     defaultValues: {
       customerPolicyId: presetPolicy || "",
       claimAmount: "",
-      description: "",
     },
   });
 
   const loadPolicies = useCallback(async () => {
     try {
-      const { data } = await PolicyService.myPurchases();
-      setPolicies(Array.isArray(data) ? data : data?.content || []);
+      const { data } = await PolicyService.myPurchases({ page: 0, size: 100 });
+      setPolicies(data?.content || []);
     } catch (err) {
       setError(extractErrorMessage(err, "Could not load your policies."));
     }
@@ -60,40 +45,64 @@ export default function FileClaim() {
     loadPolicies();
   }, [loadPolicies]);
 
-  const onFiles = useCallback((e) => {
-    setFiles(Array.from(e.target.files || []));
-  }, []);
-
-  const onSubmit = async (values) => {
-    setSubmitting(true);
-    setError("");
-    try {
-      const fd = new FormData();
-      fd.append("customerPolicyId", String(values.customerPolicyId));
-      fd.append("claimAmount", String(values.claimAmount));
-      if (values.description) fd.append("description", values.description);
-      files.forEach((f) => fd.append("files", f));
-      await ClaimService.fileClaim(fd);
-      dispatch(pushToast({ message: "Claim filed successfully.", variant: "success" }));
-      reset();
-      setFiles([]);
-      navigate("/app/my-policies", { replace: true });
-    } catch (err) {
-      setError(extractErrorMessage(err, "Failed to file claim."));
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const submitClaim = useCallback(
+    async (values, mode) => {
+      if (files.length === 0) {
+        setError("Attach at least one evidence file.");
+        return;
+      }
+      setSubmitting(mode);
+      setError("");
+      try {
+        const formData = new FormData();
+        formData.append("customerPolicyId", String(values.customerPolicyId));
+        formData.append("claimAmount", String(values.claimAmount));
+        files.forEach((file) => formData.append("files", file));
+        const { data } = await ClaimService.createDraft(formData);
+        if (mode === "submit") {
+          await ClaimService.submit(data.id);
+          dispatch(pushToast({ message: "Claim submitted successfully.", variant: "success" }));
+        } else {
+          dispatch(pushToast({ message: "Claim draft saved.", variant: "success" }));
+        }
+        navigate("/app/claims", { replace: true });
+      } catch (err) {
+        setError(extractErrorMessage(err, "Failed to save claim."));
+      } finally {
+        setSubmitting("");
+      }
+    },
+    [dispatch, files, navigate]
+  );
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <header>
-        <p className="text-xs uppercase tracking-widest text-text-subtle">Claims</p>
-        <h1 className="font-heading text-4xl font-semibold mt-1">File a claim</h1>
-        <p className="mt-2 text-text-muted">Submit details and supporting documents.</p>
+      <header className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-text-subtle">Claims</p>
+          <h1 className="font-heading text-4xl font-semibold mt-1">Create claim draft</h1>
+          <p className="mt-2 text-text-muted">Save draft first or submit immediately after draft creation.</p>
+        </div>
+        <Link to="/app/claims" className="text-sm font-semibold text-brand hover:underline">
+          View my claims
+        </Link>
       </header>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+      <div className="sm:hidden grid grid-cols-2 gap-3">
+        <Link
+          to="/app/claims"
+          className="rounded-2xl border border-border bg-surface px-4 py-3 hover:border-brand transition-colors"
+        >
+          <p className="text-xs uppercase tracking-widest text-text-subtle">Current claims</p>
+          <p className="mt-1 font-semibold text-text">See drafts and statuses</p>
+        </Link>
+        <div className="rounded-2xl border border-brand bg-brand-soft px-4 py-3">
+          <p className="text-xs uppercase tracking-widest text-brand">Draft or file</p>
+          <p className="mt-1 font-semibold text-text">Upload evidence and save</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit((values) => submitClaim(values, "draft"))} className="space-y-5" noValidate>
         {error && <ErrorAlert message={error} />}
 
         <Field
@@ -101,34 +110,24 @@ export default function FileClaim() {
           id="customerPolicyId"
           label="Policy"
           error={errors.customerPolicyId?.message}
-          {...register("customerPolicyId")}
+          {...register("customerPolicyId", { required: "Select a policy" })}
         >
-          <option value="">Select a policy…</option>
-          {policies.map((p) => (
-            <option key={p.id} value={p.id}>
-              {(p.policyName || p.name || `Policy #${p.id}`) +
-                ` · ${String(p.policyType || p.type || "").toUpperCase()}`}
+          <option value="">Select a policy</option>
+          {policies.map((policy) => (
+            <option key={policy.id} value={policy.id}>
+              {policy.policyName} · {policy.policyType}
             </option>
           ))}
         </Field>
 
         <Field
           id="claimAmount"
-          label="Claim amount (USD)"
+          label="Claim amount"
           type="number"
           step="0.01"
           min="0"
           error={errors.claimAmount?.message}
-          {...register("claimAmount")}
-        />
-
-        <Field
-          as="textarea"
-          id="description"
-          label="Description (optional)"
-          placeholder="Describe what happened…"
-          error={errors.description?.message}
-          {...register("description")}
+          {...register("claimAmount", { required: "Claim amount is required" })}
         />
 
         <div>
@@ -139,27 +138,35 @@ export default function FileClaim() {
             htmlFor="files"
             className="flex flex-col items-center justify-center gap-2 px-4 py-8 rounded-xl border border-dashed border-border bg-surface text-center cursor-pointer hover:border-brand hover:bg-surface-2"
           >
-            <Upload size={20} className="text-text-muted" />
-            <p className="text-sm text-text">
-              {files.length > 0
-                ? `${files.length} file(s) selected`
-                : "Click to select photos, PDFs, or documents"}
-            </p>
-            <p className="text-xs text-text-subtle">PNG, JPG, PDF up to 10MB each</p>
+            <span className="grid place-items-center w-12 h-12 rounded-full bg-brand-soft text-brand">
+              <Icon name="image" />
+            </span>
+            <span className="text-text-muted">Select photos, PDFs, or documents</span>
+            <p className="text-sm text-text">{files.length > 0 ? `${files.length} file(s) selected` : "Click to upload files"}</p>
           </label>
           <input
             id="files"
             type="file"
             multiple
-            onChange={onFiles}
+            onChange={(event) => setFiles(Array.from(event.target.files || []))}
             className="sr-only"
             accept="image/*,application/pdf"
           />
         </div>
 
-        <Button type="submit" loading={submitting}>
-          Submit claim
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button type="submit" loading={submitting === "draft"}>
+            Save draft
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            loading={submitting === "submit"}
+            onClick={handleSubmit((values) => submitClaim(values, "submit"))}
+          >
+            Save and submit
+          </Button>
+        </div>
       </form>
     </div>
   );

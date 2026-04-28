@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Shield } from "lucide-react";
+import Icon from "../../components/ui/Icon";
 
 export default function AuthShell({ title, subtitle, children, footer }) {
   return (
@@ -8,17 +8,17 @@ export default function AuthShell({ title, subtitle, children, footer }) {
       <div className="hidden lg:flex relative overflow-hidden bg-gradient-to-br from-brand to-[#0B1220] text-white p-12 flex-col justify-between">
         <Link to="/" className="flex items-center gap-2 font-heading text-2xl font-semibold">
           <span className="grid place-items-center w-9 h-9 rounded-md bg-white/15">
-            <Shield size={18} />
+            <Icon name="shield" />
           </span>
           SmartSure
         </Link>
         <div>
           <p className="font-heading text-4xl leading-tight">
-            "Insurance shouldn't feel like a maze.
+            Insurance should not feel like maze.
             <br />
-            With SmartSure, it finally doesn't."
+            SmartSure makes path clear.
           </p>
-          <p className="mt-4 text-white/70 text-sm">— A SmartSure customer</p>
+          <p className="mt-4 text-white/70 text-sm">Verified access. Calm operations. Clear next step.</p>
         </div>
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-accent/20 blur-3xl" />
       </div>

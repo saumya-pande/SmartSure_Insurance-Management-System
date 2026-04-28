@@ -1,8 +1,5 @@
 package com.dev.dashboard.service;
-
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -44,7 +41,6 @@ public class AdminDashboardService {
 
     // ── Dashboard ─────────────────────────────────────────────
 
-    @Cacheable(cacheNames = "dashboard", key = "'admin-dashboard'")
     public DashboardResponse getDashboard() {
         String email = currentEmail();
         Map<String, Long> userCounts   = authClient.getUserCounts(ADMIN_ROLE, email);
@@ -83,6 +79,8 @@ public class AdminDashboardService {
                         "HOME", policyCounts.getOrDefault("soldHOME", 0L),
                         "VEHICLE", policyCounts.getOrDefault("soldVEHICLE", 0L)
                 ))
+                .grossRevenue(grossRevenue)
+                .totalPayouts(totalPayouts)
                 .totalRevenue(netRevenue)
                 // claims
                 .totalClaims(claimCounts.getOrDefault("total", 0L))

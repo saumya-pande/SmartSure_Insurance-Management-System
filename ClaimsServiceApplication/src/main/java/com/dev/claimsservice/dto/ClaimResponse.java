@@ -15,5 +15,6 @@ public class ClaimResponse {
     private ClaimStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<ClaimDocumentResponse> documents;
     private List<String> documentPaths;
 }
