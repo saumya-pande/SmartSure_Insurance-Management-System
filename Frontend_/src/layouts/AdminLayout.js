@@ -9,7 +9,7 @@ const NAV = [
   { to: "/admin/policies", label: "Policies", icon: () => <Icon name="file" />, group: "MAIN" },
   { to: "/admin/purchases", label: "Purchased Policies", icon: () => <Icon name="wallet" />, group: "MAIN" },
   { to: "/admin/claims", label: "Claims", icon: () => <Icon name="clipboard" />, group: "OPERATIONS" },
-  { to: "/admin/kyc", label: "KYC Management", icon: () => <Icon name="shield" />, group: "OPERATIONS" },
+  { to: "/admin/kyc", label: "KYC Management", icon: () => <Icon name="id-card" />, group: "OPERATIONS" },
   { to: "/admin/users", label: "Users", icon: () => <Icon name="users" />, group: "OPERATIONS" },
 ];
 

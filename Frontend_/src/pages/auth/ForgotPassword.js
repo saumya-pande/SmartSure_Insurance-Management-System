@@ -57,7 +57,7 @@ export default function ForgotPassword() {
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {error && <ErrorAlert message={error} />}
-        <Field id="email" label="Email" type="email" error={errors.email?.message} {...register("email")} />
+        <Field id="email" label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register("email")} />
         <Button type="submit" loading={submitting} className="w-full">
           Send reset code
         </Button>

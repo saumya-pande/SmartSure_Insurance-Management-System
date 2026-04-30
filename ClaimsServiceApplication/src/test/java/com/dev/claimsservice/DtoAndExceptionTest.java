@@ -43,7 +43,7 @@ public class DtoAndExceptionTest {
                 .status(ClaimStatus.DRAFT)
                 .createdAt(now)
                 .updatedAt(now)
-                .documentPaths(List.of("/path/to/doc"))
+                .documents(List.of())
                 .build();
 
         assertEquals(1L, response.getId());
@@ -53,7 +53,7 @@ public class DtoAndExceptionTest {
         assertEquals(ClaimStatus.DRAFT, response.getStatus());
         assertEquals(now, response.getCreatedAt());
         assertEquals(now, response.getUpdatedAt());
-        assertEquals(1, response.getDocumentPaths().size());
+        assertEquals(0, response.getDocuments().size());
     }
 
     @Test

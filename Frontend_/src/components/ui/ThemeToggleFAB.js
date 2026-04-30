@@ -36,7 +36,7 @@ export default function ThemeToggleFAB({ floating = true, className = "" }) {
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
       className={`${classes} ${className}`.trim()}
     >
-      {dark ? <Icon name="sun" /> : <Icon name="moon" />}
+      {dark ? <Icon name="sun" className="text-yellow-400" /> : <Icon name="moon" />}
     </button>
   );
 }

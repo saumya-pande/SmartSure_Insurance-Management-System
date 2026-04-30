@@ -15,4 +15,5 @@ public class KycAdminResponse {
     private String address;
     private KycStatus status;
     private String userEmail;
+    private String fileUrl;
 }

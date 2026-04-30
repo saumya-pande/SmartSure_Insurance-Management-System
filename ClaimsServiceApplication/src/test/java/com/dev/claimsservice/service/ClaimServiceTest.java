@@ -78,7 +78,7 @@ public class ClaimServiceTest {
         closeable = MockitoAnnotations.openMocks(this);
 
         tempUploadDir = System.getProperty("java.io.tmpdir") + File.separator + "claims_test_" + System.currentTimeMillis();
-        ReflectionTestUtils.setField(claimService, "UPLOAD_DIR", tempUploadDir);
+        ReflectionTestUtils.setField(claimService, "uploadDir", tempUploadDir);
 
         claimRequest = new ClaimRequest();
         claimRequest.setCustomerPolicyId(10L);

@@ -12,7 +12,7 @@ import { formatCurrency, POLICY_TYPES } from "../../lib/constants";
 
 const PAGE_SIZE = 8;
 
-export default function BrowsePolicies() {
+export default function BrowsePolicies({ publicMode = false }) {
   const [page, setPage] = useState(0);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -45,13 +45,26 @@ export default function BrowsePolicies() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${publicMode ? "mx-auto max-w-[1760px] px-5 sm:px-10 lg:px-20 py-12" : ""}`}>
       <header className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-text-subtle">Marketplace</p>
           <h1 className="font-heading text-4xl font-semibold mt-1">Browse policies</h1>
-          <p className="mt-2 text-text-muted">Active home and vehicle policies available now.</p>
+          <p className="mt-2 text-text-muted">
+            {publicMode
+              ? "View active home and vehicle policies. Sign in when you are ready to buy."
+              : "Active home and vehicle policies available now."}
+          </p>
         </div>
+        {publicMode && (
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
+          >
+            Sign in to buy
+            <Icon name="arrow-right" />
+          </Link>
+        )}
       </header>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -100,7 +113,7 @@ export default function BrowsePolicies() {
       ) : (
         <ul className="space-y-3">
           {filtered.map((policy) => (
-            <PolicyRow key={policy.id} policy={policy} />
+            <PolicyRow key={policy.id} policy={policy} publicMode={publicMode} />
           ))}
         </ul>
       )}
@@ -116,8 +129,44 @@ export default function BrowsePolicies() {
   );
 }
 
-const PolicyRow = memo(function PolicyRow({ policy }) {
+const PolicyRow = memo(function PolicyRow({ policy, publicMode = false }) {
   const type = String(policy.type || policy.policyType || "").toUpperCase();
+  const content = (
+    <>
+      <div className="grid place-items-center w-11 h-11 rounded-md bg-brand-soft text-brand">
+        <Icon name={type === "VEHICLE" ? "vehicle" : "home"} />
+      </div>
+      <div className="flex-1 min-w-[200px]">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="font-heading text-lg font-semibold">
+            {policy.policyName || `Policy #${policy.id}`}
+          </h3>
+          <StatusBadge status={type || "POLICY"} />
+          <StatusBadge status={policy.status || "ACTIVE"} />
+        </div>
+        <p className="text-sm text-text-muted mt-0.5">
+          Base premium {formatCurrency(policy.basePremium || 0)} to max premium{" "}
+          {formatCurrency(policy.maxPremium || 0)}
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="text-xs text-text-subtle uppercase tracking-wider">Starting from</p>
+        <p className="font-heading text-xl font-semibold">
+          {formatCurrency(policy.basePremium || 0)}
+        </p>
+      </div>
+    </>
+  );
+
+  if (publicMode) {
+    return (
+      <li>
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-surface p-4">
+          {content}
+        </div>
+      </li>
+    );
+  }
 
   return (
     <li>
@@ -125,28 +174,7 @@ const PolicyRow = memo(function PolicyRow({ policy }) {
         to={`/app/policies/${policy.id}`}
         className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-surface p-4 hover:border-brand transition-colors"
       >
-        <div className="grid place-items-center w-11 h-11 rounded-md bg-brand-soft text-brand">
-          <Icon name={type === "VEHICLE" ? "vehicle" : "home"} />
-        </div>
-        <div className="flex-1 min-w-[200px]">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-heading text-lg font-semibold">
-              {policy.policyName || `Policy #${policy.id}`}
-            </h3>
-            <StatusBadge status={type || "POLICY"} />
-            <StatusBadge status={policy.status || "ACTIVE"} />
-          </div>
-          <p className="text-sm text-text-muted mt-0.5">
-            Base premium {formatCurrency(policy.basePremium || 0)} to max premium{" "}
-            {formatCurrency(policy.maxPremium || 0)}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-text-subtle uppercase tracking-wider">Starting from</p>
-          <p className="font-heading text-xl font-semibold">
-            {formatCurrency(policy.basePremium || 0)}
-          </p>
-        </div>
+        {content}
       </Link>
     </li>
   );

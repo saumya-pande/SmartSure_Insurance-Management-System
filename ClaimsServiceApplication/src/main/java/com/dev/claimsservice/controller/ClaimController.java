@@ -125,14 +125,17 @@ public class ClaimController {
     public ResponseEntity<Map<String, Double>> getApprovedPayouts() {
         return ResponseEntity.ok(service.getApprovedPayouts());
     }
+
+    // ADMIN — view claim document file (authenticated)
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/document/{docId}")
     @Operation(summary = "View claim document file (admin)")
     public ResponseEntity<Resource> getClaimDocument(@PathVariable Long docId) throws MalformedURLException {
         Resource resource = service.getDocumentAsResource(docId);
+        String contentType = service.getDocumentContentType(docId);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);
     }
 }

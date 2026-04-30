@@ -24,9 +24,6 @@ public class ClaimMapper {
         response.setDocuments(documents.stream()
                 .map(this::toDocumentResponse)
                 .toList());
-        response.setDocumentPaths(documents.stream()
-                .map(ClaimDocument::getFilePath)
-                .toList());
         return response;
     }
 
@@ -34,8 +31,8 @@ public class ClaimMapper {
         return ClaimDocumentResponse.builder()
                 .id(document.getId())
                 .fileName(document.getFileName())
-                .filePath(document.getFilePath())
                 .fileType(document.getFileType())
+                .fileUrl("/api/claims/document/" + document.getId())
                 .build();
     }
 }

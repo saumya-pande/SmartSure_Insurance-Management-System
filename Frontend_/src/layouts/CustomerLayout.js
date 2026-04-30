@@ -11,7 +11,7 @@ const NAV = [
   { to: "/app/my-policies", label: "My Policies", icon: () => <Icon name="file" />, group: "MAIN" },
   { to: "/app/claims", label: "My Claims", icon: () => <Icon name="clipboard" />, group: "ACTIONS" },
   { to: "/app/claims/new", label: "File a Claim", icon: () => <Icon name="plus" />, group: "ACTIONS" },
-  { to: "/app/kyc", label: "KYC Status", icon: () => <Icon name="shield" />, group: "ACCOUNT" },
+  { to: "/app/kyc", label: "KYC Status", icon: () => <Icon name="id-card" />, group: "ACCOUNT" },
   { to: "/app/profile", label: "Profile", icon: () => <Icon name="user" />, group: "ACCOUNT" },
 ];
 

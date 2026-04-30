@@ -8,6 +8,7 @@ import com.dev.authentication.dto.UserResponse;
 import com.dev.authentication.entity.Kyc;
 import com.dev.authentication.entity.User;
 
+
 @Component
 public class KycMapper {
 
@@ -19,6 +20,9 @@ public class KycMapper {
                 .address(kyc.getAddress())
                 .status(kyc.getStatus())
                 .userEmail(kyc.getUser().getEmail())
+                .fileUrl(kyc.getDocumentPath() != null
+                        ? "/api/kyc/" + kyc.getId() + "/file"
+                        : null)
                 .build();
     }
 
@@ -31,6 +35,9 @@ public class KycMapper {
                 .address(kyc.getAddress())
                 .status(kyc.getStatus())
                 .userEmail(kyc.getUser().getEmail())
+                .fileUrl(kyc.getDocumentPath() != null
+                        ? "/api/kyc/" + kyc.getId() + "/file"
+                        : null)
                 .build();
     }
 

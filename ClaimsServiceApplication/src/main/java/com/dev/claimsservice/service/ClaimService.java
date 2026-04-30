@@ -42,7 +42,7 @@ public class ClaimService {
     private final ClaimMapper mapper;
     
     @Value("${file.upload-dir}")
-    private String UPLOAD_DIR;
+    private String uploadDir;
 
     private static final List<String> ALLOWED_TYPES = List.of(
             "application/pdf", "image/jpeg", "image/png"
@@ -69,7 +69,7 @@ public class ClaimService {
         }
 
         // save documents
-        List<ClaimDocument> documents = saveDocuments(files);
+        List<ClaimDocument> documents = saveDocuments(email, files);
 
         Claim claim = Claim.builder()
                 .customerEmail(email)
@@ -131,7 +131,7 @@ public class ClaimService {
             // Remove old documents from DB (files stay on disk for now, could be improved)
             docRepo.deleteAll(claim.getDocuments());
             
-            List<ClaimDocument> newDocs = saveDocuments(files);
+            List<ClaimDocument> newDocs = saveDocuments(email, files);
             newDocs.forEach(doc -> {
                 doc.setClaim(claim);
                 docRepo.save(doc);
@@ -244,13 +244,20 @@ public class ClaimService {
         return claim;
     }
 
-    private List<ClaimDocument> saveDocuments(List<MultipartFile> files) throws Exception {
+    /**
+     * Save documents to disk with email-based naming.
+     * Stores only the filename in the entity, not the full path.
+     * Naming convention: {emailPrefix}_{timestamp}_{originalFilename}
+     */
+    private List<ClaimDocument> saveDocuments(String email, List<MultipartFile> files) throws Exception {
         List<ClaimDocument> docs = new ArrayList<>();
 
-        Path uploadPath = Paths.get(UPLOAD_DIR);
+        Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
+
+        String emailPrefix = email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "_");
 
         for (MultipartFile file : files) {
             String contentType = file.getContentType();
@@ -259,24 +266,53 @@ public class ClaimService {
                         + ". Only PDF, JPEG, PNG allowed.");
             }
 
-            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String fileName = emailPrefix + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
+            // Store only the filename in the entity
             docs.add(ClaimDocument.builder()
-                    .fileName(file.getOriginalFilename())
-                    .filePath(filePath.toString())
+                    .fileName(fileName)
+                    .filePath(fileName)
                     .fileType(contentType)
                     .build());
         }
 
         return docs;
     }
+
+    /**
+     * Resolve a stored filename (or legacy full path) to a Resource.
+     */
     public Resource getDocumentAsResource(Long docId) throws MalformedURLException {
         ClaimDocument doc = docRepo.findById(docId)
                 .orElseThrow(() -> new EntityNotFoundException("ClaimDocument", "id", docId));
 
-        Path filePath = Paths.get(doc.getFilePath());
-        return new UrlResource(filePath.toUri());
+        Path filePath = resolveFilePath(doc.getFilePath());
+        Resource resource = new UrlResource(filePath.toUri());
+        if (!resource.exists()) {
+            throw new EntityNotFoundException("File", "path", doc.getFilePath());
+        }
+        return resource;
+    }
+
+    public String getDocumentContentType(Long docId) {
+        ClaimDocument doc = docRepo.findById(docId)
+                .orElseThrow(() -> new EntityNotFoundException("ClaimDocument", "id", docId));
+        return doc.getFileType() != null ? doc.getFileType() : "application/octet-stream";
+    }
+
+    /**
+     * Resolves a stored filename (or legacy full path) to a physical file path.
+     * Supports both new format (filename only) and legacy format (absolute path).
+     */
+    private Path resolveFilePath(String documentPath) {
+        Path path = Paths.get(documentPath);
+        if (path.isAbsolute()) {
+            // Legacy: full path stored in DB
+            return path;
+        }
+        // New: filename only — resolve against upload directory
+        return Paths.get(uploadDir).resolve(documentPath);
     }
 }

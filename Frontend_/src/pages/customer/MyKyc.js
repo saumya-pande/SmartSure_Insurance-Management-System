@@ -10,8 +10,8 @@ import { KycService } from "../../lib/services";
 import { selectAuth } from "../../store/slices/authSlice";
 import { pushToast } from "../../store/slices/toastSlice";
 import { extractErrorMessage } from "../../lib/api";
-import { openBlobResponse } from "../../lib/file";
 import Icon from "../../components/ui/Icon";
+import FilePreviewDialog from "../../components/ui/FilePreviewDialog";
 
 export default function MyKyc() {
   const dispatch = useDispatch();
@@ -19,8 +19,8 @@ export default function MyKyc() {
   const [status, setStatus] = useState(undefined);
   const [error, setError] = useState("");
   const [file, setFile] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [openingFile, setOpeningFile] = useState(false);
 
   const {
     register,
@@ -77,18 +77,13 @@ export default function MyKyc() {
     [dispatch, file, load]
   );
 
-  const openFile = useCallback(async () => {
-    setOpeningFile(true);
-    setError("");
-    try {
-      const response = await KycService.myFile();
-      openBlobResponse(response);
-    } catch (err) {
-      setError(extractErrorMessage(err, "Could not open KYC file."));
-    } finally {
-      setOpeningFile(false);
+  const openFile = useCallback(() => {
+    if (!status?.fileUrl) {
+      setError("No file available.");
+      return;
     }
-  }, []);
+    setPreviewFile({ viewUrl: status.fileUrl, fileName: "My KYC document" });
+  }, [status]);
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -117,7 +112,7 @@ export default function MyKyc() {
         </div>
         {status?.status && (
           <div className="mt-4 flex flex-wrap gap-3">
-            <Button type="button" variant="outline" onClick={openFile} loading={openingFile}>
+            <Button type="button" variant="outline" onClick={openFile}>
               View uploaded file
             </Button>
           </div>
@@ -181,6 +176,7 @@ export default function MyKyc() {
           </Button>
         </form>
       )}
+      <FilePreviewDialog file={previewFile} title="Uploaded KYC document" onClose={() => setPreviewFile(null)} />
     </div>
   );
 }

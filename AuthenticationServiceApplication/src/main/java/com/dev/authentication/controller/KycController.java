@@ -8,27 +8,21 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.dev.authentication.dto.KycRequest;
 import com.dev.authentication.dto.KycResponse;
-import com.dev.authentication.entity.Kyc;
 
 import com.dev.authentication.service.KycService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.http.MediaType;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import java.net.MalformedURLException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
+import java.net.MalformedURLException;
+
 @RestController
 @RequestMapping("/api/kyc")
 @RequiredArgsConstructor
@@ -77,37 +71,24 @@ public class KycController {
         return ResponseEntity.ok(service.getAll(PageRequest.of(page, size, Sort.by(sortBy))));
     }
 
-    // CUSTOMER — view their own KYC file
-    @PreAuthorize("hasRole('CUSTOMER')")
-    @GetMapping("/my/file")
-    @Operation(summary = "View my KYC document file")
-    public ResponseEntity<Resource> getMyKycFile(
-            @Parameter(hidden = true) @RequestHeader("X-User-Email") String email
-    ) throws MalformedURLException {
-        Resource resource = service.getFileAsResource(email);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM) // Browser will try to detect or download
-                .body(resource);
-    }
-
-    // ADMIN — view any KYC file by ID
-    @PreAuthorize("hasRole('ADMIN')")
+    // View KYC file by ID — customer can only access their own, admin can access any
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     @GetMapping("/{id}/file")
-    @Operation(summary = "View any KYC document file (admin)")
-    public ResponseEntity<Resource> getKycFileById(@PathVariable Long id) throws MalformedURLException {
+    @Operation(summary = "View KYC document file")
+    public ResponseEntity<Resource> getKycFileById(
+            @PathVariable Long id,
+            @Parameter(hidden = true) @RequestHeader("X-User-Email") String email,
+            @Parameter(hidden = true) @RequestHeader("X-User-Role") String role
+    ) throws MalformedURLException {
+        // Customers can only view their own KYC file
+        if (role != null && role.contains("CUSTOMER")) {
+            service.verifyOwnership(id, email);
+        }
         Resource resource = service.getFileAsResourceById(id);
+        String contentType = service.getFileContentTypeById(id);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);
     }
-
-
-    
-//    @PreAuthorize("hasRole('ADMIN')")
-//    @GetMapping("/{id}")
-//    public ResponseEntity<Kyc> getById(@PathVariable int id) {
-//    	ResponseEntiservice.getById();
-//    }
 }

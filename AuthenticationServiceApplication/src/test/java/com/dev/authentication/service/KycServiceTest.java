@@ -54,7 +54,7 @@ class KycServiceTest {
     @BeforeEach
     void setUp() {
         // Set up dummy upload dir in a temp folder
-        ReflectionTestUtils.setField(service, "UPLOAD_DIR", System.getProperty("java.io.tmpdir") + "/kyc_uploads");
+        ReflectionTestUtils.setField(service, "uploadDir", System.getProperty("java.io.tmpdir") + "/kyc_uploads");
 
         sampleUser = User.builder()
                 .id(1L)

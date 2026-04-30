@@ -34,8 +34,13 @@ public class KycService {
     private final KycMapper mapper;
 
     @Value("${app.upload-dir}")
-    private String UPLOAD_DIR;
+    private String uploadDir;
 
+    /**
+     * Upload or re-upload (if rejected) a KYC document.
+     * Stores only the filename in the database; the directory is resolved at runtime from config.
+     * File naming convention: {emailPrefix}_{timestamp}_{originalFilename}
+     */
     public void upload(String email, KycRequest request, MultipartFile file) throws Exception {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("User", "email", email));
@@ -43,7 +48,7 @@ public class KycService {
         // Check if user already has a KYC submission
         Optional<Kyc> existingKyc = repo.findByUserId(user.getId());
         Kyc kyc;
-        
+
         if (existingKyc.isPresent()) {
             kyc = existingKyc.get();
             if (kyc.getStatus() != KycStatus.REJECTED) {
@@ -65,16 +70,19 @@ public class KycService {
                     .build();
         }
 
-        Path uploadPath = Paths.get(UPLOAD_DIR);
+        Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
-        
-        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+
+        // File naming: emailPrefix_timestamp_originalFilename
+        String emailPrefix = email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "_");
+        String fileName = emailPrefix + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
         Path filePath = uploadPath.resolve(fileName);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        kyc.setDocumentPath(filePath.toString());
+        // Store only the filename, not the full path
+        kyc.setDocumentPath(fileName);
         repo.save(kyc);
     }
 
@@ -98,6 +106,23 @@ public class KycService {
         kyc.setStatus(status);
         repo.save(kyc);
     }
+
+    /**
+     * Verify that the KYC record belongs to the given email.
+     * Throws EntityNotFoundException if the KYC doesn't belong to this user.
+     */
+    public void verifyOwnership(Long kycId, String email) {
+        Kyc kyc = repo.findById(kycId)
+                .orElseThrow(() -> new EntityNotFoundException("KYC", "id", kycId));
+        if (!kyc.getUser().getEmail().equals(email)) {
+            throw new EntityNotFoundException("KYC", "id", kycId);
+        }
+    }
+
+    /**
+     * Resolve a KYC document file for the given customer email.
+     * Only returns their own file — enforced by the email lookup.
+     */
     public Resource getFileAsResource(String email) throws MalformedURLException {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("User", "email", email));
@@ -105,15 +130,57 @@ public class KycService {
         Kyc kyc = repo.findByUserId(user.getId())
                 .orElseThrow(() -> new EntityNotFoundException("KYC", "user", email));
 
-        Path filePath = Paths.get(kyc.getDocumentPath());
-        return new UrlResource(filePath.toUri());
+        return resolveResource(kyc.getDocumentPath());
     }
 
+    /**
+     * Resolve a KYC document file by KYC ID (admin use).
+     */
     public Resource getFileAsResourceById(Long id) throws MalformedURLException {
         Kyc kyc = repo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("KYC", "id", id));
 
-        Path filePath = Paths.get(kyc.getDocumentPath());
-        return new UrlResource(filePath.toUri());
+        return resolveResource(kyc.getDocumentPath());
+    }
+
+    public String getFileContentType(String documentPath) {
+        try {
+            Path filePath = resolveFilePath(documentPath);
+            String contentType = Files.probeContentType(filePath);
+            return contentType != null ? contentType : "application/octet-stream";
+        } catch (Exception ex) {
+            return "application/octet-stream";
+        }
+    }
+
+    public String getFileContentTypeById(Long id) {
+        Kyc kyc = repo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("KYC", "id", id));
+        return getFileContentType(kyc.getDocumentPath());
+    }
+
+    // ── helpers ──────────────────────────────────────────────
+
+    /**
+     * Resolves a stored filename (or legacy full path) to a physical file path.
+     * Supports both new format (filename only) and legacy format (absolute path).
+     */
+    private Path resolveFilePath(String documentPath) {
+        Path path = Paths.get(documentPath);
+        if (path.isAbsolute()) {
+            // Legacy: full path stored in DB
+            return path;
+        }
+        // New: filename only — resolve against upload directory
+        return Paths.get(uploadDir).resolve(documentPath);
+    }
+
+    private Resource resolveResource(String documentPath) throws MalformedURLException {
+        Path filePath = resolveFilePath(documentPath);
+        Resource resource = new UrlResource(filePath.toUri());
+        if (!resource.exists()) {
+            throw new EntityNotFoundException("File", "path", documentPath);
+        }
+        return resource;
     }
 }

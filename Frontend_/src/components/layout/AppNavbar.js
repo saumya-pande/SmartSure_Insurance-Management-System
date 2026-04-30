@@ -16,17 +16,15 @@ export default function AppNavbar({ onMenu, admin }) {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur">
-        <div className="h-16 px-4 sm:px-6 flex items-center gap-3">
+        <div className="h-20 px-4 sm:px-6 flex items-center gap-3">
           <Link
             to={admin ? "/admin" : "/app"}
-            className="flex items-center gap-2 font-heading text-xl font-semibold"
+            className="flex items-center font-heading text-3xl sm:text-4xl font-semibold"
             style={{ flexShrink: 0 }}
             aria-label="SmartSure home"
           >
-            <span className="grid place-items-center w-8 h-8 rounded-md bg-brand text-white">
-              <Icon name="shield" />
-            </span>
-            <span className="hidden xs:inline sm:inline">SmartSure</span>
+            <span style={{ color: "#1E3A8A" }}>Smart</span>
+            <span style={{ color: "#E67E22" }}>Sure</span>
           </Link>
 
           <button

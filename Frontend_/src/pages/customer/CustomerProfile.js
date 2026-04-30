@@ -4,19 +4,19 @@ import { useSelector } from "react-redux";
 import { KycService } from "../../lib/services";
 import { selectAuth } from "../../store/slices/authSlice";
 import { extractErrorMessage } from "../../lib/api";
-import { openBlobResponse } from "../../lib/file";
 import ErrorAlert from "../../components/ui/ErrorAlert";
 import StatusBadge from "../../components/ui/StatusBadge";
 import Button from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { formatStatusLabel } from "../../lib/constants";
 import Icon from "../../components/ui/Icon";
+import FilePreviewDialog from "../../components/ui/FilePreviewDialog";
 
 export default function CustomerProfile() {
   const { user } = useSelector(selectAuth);
   const [kyc, setKyc] = useState(undefined);
   const [error, setError] = useState("");
-  const [openingFile, setOpeningFile] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -48,18 +48,13 @@ export default function CustomerProfile() {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }, [user]);
 
-  const openFile = useCallback(async () => {
-    setOpeningFile(true);
-    setError("");
-    try {
-      const response = await KycService.myFile();
-      openBlobResponse(response);
-    } catch (err) {
-      setError(extractErrorMessage(err, "Could not open KYC file."));
-    } finally {
-      setOpeningFile(false);
+  const openFile = useCallback(() => {
+    if (!kyc?.fileUrl) {
+      setError("No file available.");
+      return;
     }
-  }, []);
+    setPreviewFile({ viewUrl: kyc.fileUrl, fileName: "My KYC document" });
+  }, [kyc]);
 
   return (
     <div className="space-y-6">
@@ -118,7 +113,7 @@ export default function CustomerProfile() {
               <ProfileRow label="Document type" value={formatStatusLabel(kyc.documentType || "Unknown")} />
               <ProfileRow label="Status" value={formatStatusLabel(kyc.status)} />
               <div className="pt-2">
-                <Button type="button" variant="outline" onClick={openFile} loading={openingFile}>
+                <Button type="button" variant="outline" onClick={openFile}>
                   View uploaded file
                 </Button>
               </div>
@@ -135,11 +130,7 @@ export default function CustomerProfile() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <QuickLink to="/app" icon="clipboard" title="Dashboard" body="Check live policy and claim activity." />
-        <QuickLink to="/app/policies" icon="folder-open" title="Bazaar" body="Browse live home and vehicle plans." />
-        <QuickLink to="/app/my-policies" icon="file" title="My Policies" body="Review purchased coverage and file claims." />
-      </section>
+      <FilePreviewDialog file={previewFile} title="Uploaded KYC document" onClose={() => setPreviewFile(null)} />
     </div>
   );
 }
@@ -150,20 +141,5 @@ function ProfileRow({ label, value }) {
       <p className="text-xs uppercase tracking-widest text-text-subtle">{label}</p>
       <p className="mt-1 font-medium break-words">{value}</p>
     </div>
-  );
-}
-
-function QuickLink({ to, icon, title, body }) {
-  return (
-    <Link
-      to={to}
-      className="rounded-2xl border border-border bg-surface p-5 hover:border-brand transition-colors"
-    >
-      <div className="grid place-items-center w-10 h-10 rounded-xl bg-brand-soft text-brand">
-        <Icon name={icon} />
-      </div>
-      <h3 className="font-heading text-xl font-semibold mt-4">{title}</h3>
-      <p className="mt-2 text-sm text-text-muted">{body}</p>
-    </Link>
   );
 }

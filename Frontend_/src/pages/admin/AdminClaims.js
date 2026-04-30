@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch } from "react-redux";
-import { AdminClaimService, ClaimService } from "../../lib/services";
+import { AdminClaimService } from "../../lib/services";
 import { extractErrorMessage } from "../../lib/api";
 import ErrorAlert from "../../components/ui/ErrorAlert";
 import StatusBadge from "../../components/ui/StatusBadge";
@@ -11,7 +11,7 @@ import Field from "../../components/ui/Field";
 import Button from "../../components/ui/Button";
 import { pushToast } from "../../store/slices/toastSlice";
 import { CLAIM_STATUSES, formatCurrency } from "../../lib/constants";
-import { openBlobResponse } from "../../lib/file";
+import FilePreviewDialog from "../../components/ui/FilePreviewDialog";
 
 const PAGE_SIZE = 10;
 
@@ -21,6 +21,7 @@ export default function AdminClaims() {
   const [filters, setFilters] = useState({ status: "", email: "", startDate: "", endDate: "" });
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [previewFile, setPreviewFile] = useState(null);
 
   const load = useCallback(async () => {
     setData(null);
@@ -57,13 +58,12 @@ export default function AdminClaims() {
   );
 
   const openDocument = useCallback(
-    async (docId) => {
-      try {
-        const response = await ClaimService.document(docId);
-        openBlobResponse(response);
-      } catch (err) {
-        dispatch(pushToast({ message: extractErrorMessage(err, "Could not open document."), variant: "danger" }));
+    (doc) => {
+      if (!doc.fileUrl) {
+        dispatch(pushToast({ message: "No file available for this document.", variant: "danger" }));
+        return;
       }
+      setPreviewFile({ viewUrl: doc.fileUrl, fileName: doc.fileName || "Claim document" });
     },
     [dispatch]
   );
@@ -116,7 +116,7 @@ export default function AdminClaims() {
                   <Button
                     key={document.id || `${claim.id}-${index}`}
                     variant="outline"
-                    onClick={() => openDocument(document.id)}
+                    onClick={() => openDocument(document)}
                   >
                     {document.fileName || `Document ${index + 1}`}
                   </Button>
@@ -143,6 +143,7 @@ export default function AdminClaims() {
       )}
 
       {data && <Pagination page={data.number ?? page} totalPages={data.totalPages ?? 1} onChange={setPage} />}
+      <FilePreviewDialog file={previewFile} title="Claim document" onClose={() => setPreviewFile(null)} />
     </div>
   );
 }

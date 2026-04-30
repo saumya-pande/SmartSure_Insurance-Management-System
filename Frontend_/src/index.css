@@ -113,6 +113,30 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   border-radius: 8px;
 }
 
+@keyframes landing-photo-step-scroll {
+  0%, 7% { transform: translateX(0); }
+  10%, 17% { transform: translateX(-5%); }
+  20%, 27% { transform: translateX(-10%); }
+  30%, 37% { transform: translateX(-15%); }
+  40%, 47% { transform: translateX(-20%); }
+  50%, 57% { transform: translateX(-25%); }
+  60%, 67% { transform: translateX(-30%); }
+  70%, 77% { transform: translateX(-35%); }
+  80%, 87% { transform: translateX(-40%); }
+  90%, 97% { transform: translateX(-45%); }
+  100% { transform: translateX(-50%); }
+}
+
+.landing-photo-step-scroll,
+.landing-photo-step-scroll-mobile {
+  animation: landing-photo-step-scroll 45s ease-in-out infinite;
+}
+
+.landing-photo-step-scroll:hover,
+.landing-photo-step-scroll-mobile:hover {
+  animation-play-state: paused;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }

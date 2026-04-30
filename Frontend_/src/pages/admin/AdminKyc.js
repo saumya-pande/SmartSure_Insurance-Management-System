@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch } from "react-redux";
-import { AdminKycService, KycService } from "../../lib/services";
+import { AdminKycService } from "../../lib/services";
 import { extractErrorMessage } from "../../lib/api";
 import ErrorAlert from "../../components/ui/ErrorAlert";
 import StatusBadge from "../../components/ui/StatusBadge";
@@ -11,7 +11,7 @@ import Button from "../../components/ui/Button";
 import Field from "../../components/ui/Field";
 import { pushToast } from "../../store/slices/toastSlice";
 import { KYC_STATUSES } from "../../lib/constants";
-import { openBlobResponse } from "../../lib/file";
+import FilePreviewDialog from "../../components/ui/FilePreviewDialog";
 
 const PAGE_SIZE = 10;
 
@@ -21,6 +21,7 @@ export default function AdminKyc() {
   const [filters, setFilters] = useState({ status: "", email: "" });
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [previewFile, setPreviewFile] = useState(null);
 
   const load = useCallback(async () => {
     setData(null);
@@ -55,13 +56,12 @@ export default function AdminKyc() {
   );
 
   const openFile = useCallback(
-    async (id) => {
-      try {
-        const response = await KycService.adminFile(id);
-        openBlobResponse(response);
-      } catch (err) {
-        dispatch(pushToast({ message: extractErrorMessage(err, "Could not open file."), variant: "danger" }));
+    (item) => {
+      if (!item.fileUrl) {
+        dispatch(pushToast({ message: "No file available for this submission.", variant: "danger" }));
+        return;
       }
+      setPreviewFile({ viewUrl: item.fileUrl, fileName: `KYC #${item.id}` });
     },
     [dispatch]
   );
@@ -106,7 +106,7 @@ export default function AdminKyc() {
                 <p className="text-sm text-text-muted">{item.address}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={() => openFile(item.id)}>View file</Button>
+                <Button variant="outline" onClick={() => openFile(item)}>View file</Button>
                 <Button variant="outline" onClick={() => setStatus(item, "REJECTED")}>Reject</Button>
                 <Button onClick={() => setStatus(item, "APPROVED")}>Approve</Button>
               </div>
@@ -116,6 +116,7 @@ export default function AdminKyc() {
       )}
 
       {data && <Pagination page={data.number ?? page} totalPages={data.totalPages ?? 1} onChange={setPage} />}
+      <FilePreviewDialog file={previewFile} title="KYC document" onClose={() => setPreviewFile(null)} />
     </div>
   );
 }

@@ -69,13 +69,14 @@ export default function ResetPassword() {
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {error && <ErrorAlert message={error} />}
-        <Field id="email" label="Email" type="email" error={errors.email?.message} {...register("email")} />
-        <Field id="otp" label="One-time code" inputMode="numeric" error={errors.otp?.message} {...register("otp")} />
+        <Field id="email" label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register("email")} />
+        <Field id="otp" label="One-time code" inputMode="numeric" placeholder="Enter OTP from email" error={errors.otp?.message} {...register("otp")} />
         <Field
           id="newPassword"
           label="New password"
           type="password"
           autoComplete="new-password"
+          placeholder="Enter new password"
           error={errors.newPassword?.message}
           {...register("newPassword")}
         />

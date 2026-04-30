@@ -65,8 +65,8 @@ export default function CustomerDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-xs uppercase tracking-widest text-text-subtle">Welcome back</p>
-        <h1 className="font-heading text-4xl font-semibold mt-1">{user?.name || "Customer"}.</h1>
+        <p className="text-xs uppercase tracking-widest text-text-subtle">Dashboard</p>
+        <h1 className="font-heading text-4xl font-semibold mt-1">Welcome back, {getDisplayName(user)}</h1>
         <p className="mt-2 text-text-muted">Live snapshot of policies, KYC, and claim activity.</p>
       </div>
 
@@ -80,10 +80,10 @@ export default function CustomerDashboard() {
 
       <section className="grid lg:grid-cols-3 gap-4">
         <QuickLink
-          to="/app/policies"
-          icon="folder-open"
-          title="Browse policies"
-          body="Explore active home and vehicle plans."
+          to="/app/my-policies"
+          icon="file"
+          title="My policies"
+          body="View your purchased coverage and policy details."
         />
         <QuickLink
           to="/app/claims"
@@ -93,7 +93,7 @@ export default function CustomerDashboard() {
         />
         <QuickLink
           to="/app/kyc"
-          icon="shield"
+          icon="id-card"
           title="KYC status"
           body={kyc?.status ? `Status: ${formatStatusLabel(kyc.status)}.` : "Complete verification to keep purchases and claims moving."}
           badge={kyc?.status ? <StatusBadge status={kyc.status} /> : null}
@@ -205,4 +205,14 @@ function StatCard({ label, value }) {
 
 function EmptyBox({ text }) {
   return <div className="rounded-xl bg-surface-2 p-4 text-sm text-text-muted">{text}</div>;
+}
+
+function getDisplayName(user) {
+  if (user?.name && String(user.name).trim()) return String(user.name).trim();
+  const email = String(user?.email || "").trim();
+  if (!email) return "Customer";
+  const localPart = email.split("@")[0] || "Customer";
+  return localPart
+    .replace(/[._-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }

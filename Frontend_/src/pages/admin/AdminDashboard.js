@@ -123,7 +123,7 @@ export default function AdminDashboard() {
         />
         <MetricCard
           title="KYC"
-          icon="shield"
+          icon="id-card"
           loading={!dashboard}
           value={dashboard?.totalKyc}
           detail={buildDetail([

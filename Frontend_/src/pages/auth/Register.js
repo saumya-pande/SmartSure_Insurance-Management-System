@@ -27,6 +27,10 @@ const schema = yup.object({
     .matches(/\d/, "Must include a digit")
     .matches(/[^A-Za-z0-9]/, "Must include a special character")
     .required("Password is required"),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref("password"), null], "Passwords must match")
+    .required("Please confirm your password"),
 });
 
 export default function Register() {
@@ -42,14 +46,15 @@ export default function Register() {
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
   const onSubmit = async (values) => {
     setSubmitting(true);
     setError("");
     try {
-      await AuthService.register(values);
+      const { confirmPassword, ...payload } = values;
+      await AuthService.register(payload);
       dispatch(pushToast({ message: "Account created. Please sign in.", variant: "success" }));
       reset();
       navigate("/login", { replace: true });
@@ -75,12 +80,20 @@ export default function Register() {
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {error && <ErrorAlert message={error} />}
-        <Field id="name" label="Full name" autoComplete="name" error={errors.name?.message} {...register("name")} />
+        <Field
+          id="name"
+          label="Full name"
+          autoComplete="name"
+          placeholder="John Doe"
+          error={errors.name?.message}
+          {...register("name")}
+        />
         <Field
           id="email"
           label="Email"
           type="email"
           autoComplete="email"
+          placeholder="you@example.com"
           error={errors.email?.message}
           {...register("email")}
         />
@@ -89,9 +102,19 @@ export default function Register() {
           label="Password"
           type="password"
           autoComplete="new-password"
+          placeholder="Create a strong password"
           hint="Min 8 chars · 1 upper · 1 lower · 1 digit · 1 special"
           error={errors.password?.message}
           {...register("password")}
+        />
+        <Field
+          id="confirmPassword"
+          label="Confirm password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="Re-enter your password"
+          error={errors.confirmPassword?.message}
+          {...register("confirmPassword")}
         />
         <Button type="submit" loading={submitting} className="w-full">
           Create account

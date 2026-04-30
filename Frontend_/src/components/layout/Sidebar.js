@@ -35,7 +35,7 @@ export default function Sidebar({ items, open, onClose, title = "Navigation" }) 
           </p>
           <ul className="space-y-1">
             {list.map((item) => {
-              const Icon = item.icon;
+              const ItemIcon = item.icon;
               return (
                 <li key={item.to}>
                   <NavLink
@@ -43,14 +43,14 @@ export default function Sidebar({ items, open, onClose, title = "Navigation" }) 
                     end={item.end}
                     onClick={handleNavClick}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                      `flex items-center gap-3 px-3 py-2.5 rounded-md text-base transition-colors ${
                         isActive
                           ? "bg-brand-soft text-brand font-semibold"
                           : "text-text-muted hover:bg-surface-2 hover:text-text"
                       }`
                     }
                   >
-                    {Icon ? <Icon size={18} /> : null}
+                    {ItemIcon ? <ItemIcon size={20} /> : null}
                     <span>{item.label}</span>
                   </NavLink>
                 </li>
@@ -65,7 +65,7 @@ export default function Sidebar({ items, open, onClose, title = "Navigation" }) 
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden lg:block w-64 shrink-0 border-r border-border bg-surface">
+      <aside className="hidden lg:block w-64 shrink-0 border-r border-border bg-surface sticky top-0 h-screen overflow-y-auto">
         {content}
       </aside>
 
