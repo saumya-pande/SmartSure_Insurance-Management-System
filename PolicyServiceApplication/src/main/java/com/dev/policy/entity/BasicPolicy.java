@@ -21,6 +21,14 @@ public class BasicPolicy {
     private Double basePremium;
     private Double maxPremium;
 
+    @Column(length = 250)
+    private String description;
+
+    private Integer maxMonthCoverage;
+
+    @Enumerated(EnumType.STRING)
+    private BillingCycle billingCycle;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     private PolicyStatus status = PolicyStatus.ACTIVE;

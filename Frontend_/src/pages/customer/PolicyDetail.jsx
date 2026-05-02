@@ -27,6 +27,7 @@ export default function PolicyDetail() {
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -113,16 +114,16 @@ export default function PolicyDetail() {
                   {policy.policyName || `Policy #${policy.id}`}
                 </h1>
                 <p className="mt-2 text-text-muted max-w-2xl">
-                  Business policy range from {formatCurrency(policy.basePremium)} to{" "}
-                  {formatCurrency(policy.maxPremium)} depending on selected risk details.
+                  {policy.description || `Business policy range from ${formatCurrency(policy.basePremium)} to ${formatCurrency(policy.maxPremium)} depending on selected risk details.`}
                 </p>
               </div>
             </div>
 
-            <div className="mt-8 grid sm:grid-cols-3 gap-4">
+            <div className="mt-8 grid sm:grid-cols-4 gap-4">
               <Stat label="Base premium" value={formatCurrency(policy.basePremium || 0)} />
               <Stat label="Max premium" value={formatCurrency(policy.maxPremium || 0)} />
               <Stat label="Type" value={type || "Policy"} />
+              <Stat label="Max Duration" value={`${policy.maxMonthCoverage} months`} />
             </div>
           </div>
 
@@ -157,7 +158,7 @@ export default function PolicyDetail() {
                 min={policy.basePremium || 0}
                 max={policy.maxPremium || undefined}
                 step="0.01"
-                hint={`Allowed range: ${formatCurrency(policy.basePremium)} to ${formatCurrency(policy.maxPremium)}`}
+                hint={`Allowed range: ${formatCurrency(policy.basePremium)} to ${formatCurrency(policy.maxPremium)} (billed ${policy.billingCycle?.toLowerCase()})`}
                 error={errors.premiumAmount?.message}
                 {...register("premiumAmount", { required: "Premium amount is required" })}
               />
@@ -174,12 +175,26 @@ export default function PolicyDetail() {
                   label="End date"
                   type="date"
                   error={errors.endDate?.message}
-                  {...register("endDate", { required: "End date is required" })}
+                  {...register("endDate", {
+                    required: "End date is required",
+                    validate: (value) => {
+                      const startStr = getValues("startDate");
+                      if (!startStr || !value) return true;
+                      const start = new Date(startStr);
+                      const end = new Date(value);
+                      if (end <= start) return "End date must be after start date";
+                      const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+                      if (months > (policy.maxMonthCoverage || 0)) {
+                        return `Duration cannot exceed ${policy.maxMonthCoverage} months`;
+                      }
+                      return true;
+                    },
+                  })}
                 />
               </div>
               <Field
                 id="propertyIdentifier"
-                label={type === "VEHICLE" ? "Vehicle number" : "House or flat number"}
+                label={type === "VEHICLE" ? "Vehicle number" : "House No. / Property Identifier"}
                 error={errors.propertyIdentifier?.message}
                 {...register("propertyIdentifier", { required: "Property identifier is required" })}
               />

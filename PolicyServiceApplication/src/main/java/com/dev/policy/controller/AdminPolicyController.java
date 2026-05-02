@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import com.dev.policy.dto.BasicPolicyRequest;
 import com.dev.policy.dto.BasicPolicyResponse;
 import com.dev.policy.dto.CustomerPolicyResponse;
@@ -63,13 +64,13 @@ public class AdminPolicyController {
 
     @PostMapping("/policies")
     public ResponseEntity<BasicPolicyResponse> create(
-            @RequestBody BasicPolicyRequest r) {
+            @Valid @RequestBody BasicPolicyRequest r) {
         return ResponseEntity.ok(basicPolicyService.create(r));
     }
 
     @PutMapping("/policies/{id}")
     public ResponseEntity<BasicPolicyResponse> update(
-            @PathVariable(name = "id") Long id, @RequestBody BasicPolicyRequest r) {
+            @PathVariable(name = "id") Long id, @Valid @RequestBody BasicPolicyRequest r) {
         return ResponseEntity.ok(basicPolicyService.update(id, r));
     }
 

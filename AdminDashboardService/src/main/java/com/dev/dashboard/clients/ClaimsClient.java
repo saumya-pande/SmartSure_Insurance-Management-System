@@ -9,7 +9,7 @@ import com.dev.dashboard.entity.ClaimStatus;
 
 import java.util.Map;
 
-@FeignClient(name = "CLAIMS-SERVICE")
+@FeignClient(name = "claims-service")
 public interface ClaimsClient {
 
     @GetMapping("/api/claims")

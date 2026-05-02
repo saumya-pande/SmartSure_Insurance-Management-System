@@ -19,8 +19,8 @@ public interface CustomerPolicyRepository extends JpaRepository<CustomerPolicy, 
     long countByStatus(PurchaseStatus status);
     long countByPolicyType(PolicyType type);
 
-    @Query("SELECT SUM(c.premiumAmount) FROM CustomerPolicy c")
-    Double sumPremiumAmount();
+    @Query("SELECT SUM(c.totalPremium) FROM CustomerPolicy c")
+    Double sumTotalPremium();
 
     /**
      * Flexible filter query for admin — all filters are optional.

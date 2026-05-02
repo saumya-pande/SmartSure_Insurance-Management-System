@@ -114,8 +114,18 @@ export default function AdminPolicies() {
                   <StatusBadge status={policy.status} />
                 </div>
                 <p className="text-sm text-text-muted mt-1">
-                  Base premium {formatCurrency(policy.basePremium)} · Max premium {formatCurrency(policy.maxPremium)}
+                  Base premium {formatCurrency(policy.basePremium)} · Max premium {formatCurrency(policy.maxPremium)} · Max {policy.maxMonthCoverage} months
                 </p>
+                <div className="flex gap-2 mt-2">
+                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-surface-2 border border-border">
+                    Billed {policy.billingCycle?.toLowerCase()}
+                  </span>
+                </div>
+                {policy.description && (
+                  <p className="text-sm text-text-muted mt-3 bg-surface-2 p-3 rounded-lg border border-border/50 max-w-3xl leading-relaxed">
+                    {policy.description}
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => toggle(policy)}>
@@ -163,6 +173,9 @@ function PolicyDialog({ initial, onClose, onSaved }) {
       type: initial?.type || "",
       basePremium: initial?.basePremium || "",
       maxPremium: initial?.maxPremium || "",
+      description: initial?.description || "",
+      maxMonthCoverage: initial?.maxMonthCoverage || "",
+      billingCycle: initial?.billingCycle || "YEARLY",
     },
   });
 
@@ -171,12 +184,15 @@ function PolicyDialog({ initial, onClose, onSaved }) {
       setSubmitting(true);
       setError("");
       try {
-        const payload = {
-          policyName: values.policyName,
-          type: values.type,
-          basePremium: Number(values.basePremium),
-          maxPremium: Number(values.maxPremium),
-        };
+          const payload = {
+            policyName: values.policyName,
+            type: values.type,
+            basePremium: Number(values.basePremium),
+            maxPremium: Number(values.maxPremium),
+            description: values.description,
+            maxMonthCoverage: Number(values.maxMonthCoverage),
+            billingCycle: values.billingCycle,
+          };
         if (isEdit) {
           await AdminPolicyService.update(initial.id, payload);
           dispatch(pushToast({ message: "Policy updated.", variant: "success" }));
@@ -212,6 +228,38 @@ function PolicyDialog({ initial, onClose, onSaved }) {
             <Field id="basePremium" label="Base premium" type="number" step="0.01" error={errors.basePremium?.message} {...register("basePremium", { required: "Base premium is required" })} />
             <Field id="maxPremium" label="Max premium" type="number" step="0.01" error={errors.maxPremium?.message} {...register("maxPremium", { required: "Max premium is required" })} />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              id="maxMonthCoverage"
+              label="Max coverage (months)"
+              type="number"
+              error={errors.maxMonthCoverage?.message}
+              {...register("maxMonthCoverage", {
+                required: "Max month coverage is required",
+                min: { value: 1, message: "Must be at least 1 month" },
+              })}
+            />
+            <Field
+              as="select"
+              id="billingCycle"
+              label="Billing cycle"
+              error={errors.billingCycle?.message}
+              {...register("billingCycle", { required: "Billing cycle is required" })}
+            >
+              <option value="MONTHLY">MONTHLY</option>
+              <option value="YEARLY">YEARLY</option>
+            </Field>
+          </div>
+          <Field
+            as="textarea"
+            id="description"
+            label="Description"
+            rows={3}
+            error={errors.description?.message}
+            {...register("description", {
+              maxLength: { value: 250, message: "Max 250 characters" },
+            })}
+          />
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
             <Button type="submit" loading={submitting}>{isEdit ? "Save changes" : "Create policy"}</Button>

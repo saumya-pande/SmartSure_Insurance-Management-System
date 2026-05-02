@@ -17,7 +17,8 @@ public class CustomerPolicy {
     private String customerEmail;
     private String holderName;
 
-    private Double premiumAmount;
+    private Double premiumAmount; // rate per billing cycle
+    private Double totalPremium;   // total contract value
     private LocalDate startDate;
     private LocalDate endDate;
 

@@ -81,6 +81,8 @@ public class CustomerPolicyServiceTest {
                 .type(PolicyType.HOME)
                 .basePremium(100.0)
                 .maxPremium(500.0)
+                .maxMonthCoverage(12)
+                .billingCycle(com.dev.policy.entity.BillingCycle.YEARLY)
                 .status(PolicyStatus.ACTIVE)
                 .build();
 
@@ -89,6 +91,7 @@ public class CustomerPolicyServiceTest {
                 .customerEmail("john@example.com")
                 .holderName("John Doe")
                 .premiumAmount(200.0)
+                .totalPremium(200.0)
                 .startDate(LocalDate.now())
                 .endDate(LocalDate.now().plusYears(1))
                 .propertyIdentifier("PROP-123")
@@ -316,7 +319,7 @@ public class CustomerPolicyServiceTest {
 
     @Test
     void testGetRevenue_Success() {
-        when(repo.sumPremiumAmount()).thenReturn(5000.0);
+        when(repo.sumTotalPremium()).thenReturn(5000.0);
 
         Map<String, Double> revenue = customerPolicyService.getRevenue();
 
@@ -326,7 +329,7 @@ public class CustomerPolicyServiceTest {
 
     @Test
     void testGetRevenue_Null() {
-        when(repo.sumPremiumAmount()).thenReturn(null);
+        when(repo.sumTotalPremium()).thenReturn(null);
 
         Map<String, Double> revenue = customerPolicyService.getRevenue();
 

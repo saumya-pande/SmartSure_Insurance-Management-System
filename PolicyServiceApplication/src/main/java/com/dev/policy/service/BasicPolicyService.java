@@ -29,6 +29,8 @@ public class BasicPolicyService {
             throw new MissingRequiredFieldException("basePremium");
         if (request.getMaxPremium() == null)
             throw new MissingRequiredFieldException("maxPremium");
+        if (request.getMaxMonthCoverage() == null)
+            throw new MissingRequiredFieldException("maxMonthCoverage");
         if (request.getBasePremium() > request.getMaxPremium())
             throw new InvalidFieldValueException("basePremium", request.getBasePremium(),
                     "basePremium cannot be greater than maxPremium");
@@ -38,6 +40,9 @@ public class BasicPolicyService {
                 .type(request.getType())
                 .basePremium(request.getBasePremium())
                 .maxPremium(request.getMaxPremium())
+                .description(request.getDescription())
+                .maxMonthCoverage(request.getMaxMonthCoverage())
+                .billingCycle(request.getBillingCycle())
                 .status(PolicyStatus.ACTIVE)
                 .build();
         return toResponse(repo.save(policy));
@@ -56,6 +61,9 @@ public class BasicPolicyService {
         policy.setType(request.getType());
         policy.setBasePremium(request.getBasePremium());
         policy.setMaxPremium(request.getMaxPremium());
+        policy.setDescription(request.getDescription());
+        policy.setMaxMonthCoverage(request.getMaxMonthCoverage());
+        policy.setBillingCycle(request.getBillingCycle());
         return toResponse(repo.save(policy));
     }
 
@@ -117,6 +125,9 @@ public class BasicPolicyService {
                 .type(p.getType())
                 .basePremium(p.getBasePremium())
                 .maxPremium(p.getMaxPremium())
+                .description(p.getDescription())
+                .maxMonthCoverage(p.getMaxMonthCoverage())
+                .billingCycle(p.getBillingCycle())
                 .status(p.getStatus())
                 .build();
     }

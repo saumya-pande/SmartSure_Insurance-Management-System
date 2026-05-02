@@ -17,6 +17,7 @@ public class CustomerPolicyResponse {
     private String holderName;
     private String customerEmail;
     private Double premiumAmount;
+    private Double totalPremium;
     private LocalDate startDate;
     private LocalDate endDate;
     private String propertyIdentifier;

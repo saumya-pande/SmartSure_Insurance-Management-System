@@ -143,9 +143,11 @@ export default function MyKyc() {
             {...register("documentType", { required: "Select a document type" })}
           >
             <option value="">Select</option>
-            <option value="ID_CARD">ID Card</option>
+            <option value="AADHAR_CARD">Aadhar Card</option>
+            <option value="PAN_CARD">PAN Card</option>
+            <option value="DRIVING_LICENCE">Driving Licence</option>
             <option value="PASSPORT">Passport</option>
-            <option value="DRIVERS_LICENSE">Driver&apos;s License</option>
+            <option value="VOTER_ID">Voter ID</option>
           </Field>
 
           <div>

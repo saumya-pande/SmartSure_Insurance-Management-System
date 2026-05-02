@@ -69,10 +69,35 @@ public class CustomerPolicyService {
             throw new DuplicatePropertyInsuranceException(
                 request.getPropertyIdentifier(), basic.getType());
 
+        // ── duration validation ───────────────────────────────────
+        if (basic.getMaxMonthCoverage() != null
+                && request.getStartDate() != null
+                && request.getEndDate() != null) {
+            long months = java.time.Period.between(request.getStartDate(), request.getEndDate()).toTotalMonths();
+            if (months > basic.getMaxMonthCoverage()) {
+                throw new InvalidFieldValueException("endDate", request.getEndDate(),
+                        "Coverage duration (" + months + " months) exceeds the maximum allowed "
+                        + basic.getMaxMonthCoverage() + " months for this policy.");
+            }
+        }
+        
+        long months = java.time.Period.between(request.getStartDate(), request.getEndDate()).toTotalMonths();
+        if (months <= 0) months = 1; // minimum 1 month/unit
+        
+        Double totalAmount = request.getPremiumAmount();
+        if (basic.getBillingCycle() == BillingCycle.MONTHLY) {
+            totalAmount = request.getPremiumAmount() * months;
+        } else if (basic.getBillingCycle() == BillingCycle.YEARLY) {
+            long years = months / 12;
+            if (years == 0) years = 1; // minimum 1 year charge if yearly
+            totalAmount = request.getPremiumAmount() * years;
+        }
+
         CustomerPolicy cp = CustomerPolicy.builder()
                 .customerEmail(email)
                 .holderName(request.getHolderName())
                 .premiumAmount(request.getPremiumAmount())
+                .totalPremium(totalAmount)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .propertyIdentifier(request.getPropertyIdentifier())
@@ -147,6 +172,7 @@ public class CustomerPolicyService {
                 .holderName(cp.getHolderName())
                 .customerEmail(cp.getCustomerEmail())
                 .premiumAmount(cp.getPremiumAmount())
+                .totalPremium(cp.getTotalPremium())
                 .startDate(cp.getStartDate())
                 .endDate(cp.getEndDate())
                 .propertyIdentifier(cp.getPropertyIdentifier())
@@ -166,7 +192,7 @@ public class CustomerPolicyService {
     }
 
     public Map<String, Double> getRevenue() {
-        Double total = repo.sumPremiumAmount();
+        Double total = repo.sumTotalPremium();
         return Map.of("total", total != null ? total : 0.0);
     }
 }

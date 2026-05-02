@@ -146,13 +146,21 @@ const PolicyRow = memo(function PolicyRow({ policy, publicMode = false }) {
         </div>
         <p className="text-sm text-text-muted mt-0.5">
           Base premium {formatCurrency(policy.basePremium || 0)} to max premium{" "}
-          {formatCurrency(policy.maxPremium || 0)}
+          {formatCurrency(policy.maxPremium || 0)} · Max {policy.maxMonthCoverage} months
         </p>
+        {policy.description && (
+          <p className="text-sm text-text-subtle mt-1.5 line-clamp-1 italic">
+            "{policy.description}"
+          </p>
+        )}
       </div>
       <div className="text-right">
         <p className="text-xs text-text-subtle uppercase tracking-wider">Starting from</p>
         <p className="font-heading text-xl font-semibold">
           {formatCurrency(policy.basePremium || 0)}
+          <span className="text-xs text-text-muted font-normal ml-1">
+            / {policy.billingCycle === "MONTHLY" ? "mo" : "yr"}
+          </span>
         </p>
       </div>
     </>

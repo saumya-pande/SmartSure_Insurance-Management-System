@@ -16,7 +16,7 @@ import com.dev.dashboard.dto.CustomerPolicyResponse;
 
 
 
-@FeignClient(name = "POLICY-SERVICE")
+@FeignClient(name = "policy-service")
 public interface PolicyClient {
 
     // basic policy CRUD
