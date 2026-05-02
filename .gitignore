@@ -72,3 +72,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# Frontend builds
+Frontend_/build/
+Frontend_/dist/
+node_modules/
+
+# Java builds
+target/
+*.class
