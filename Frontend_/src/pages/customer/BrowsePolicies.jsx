@@ -148,6 +148,9 @@ const PolicyRow = memo(function PolicyRow({ policy, publicMode = false }) {
           Base premium {formatCurrency(policy.basePremium || 0)} to max premium{" "}
           {formatCurrency(policy.maxPremium || 0)} · Max {policy.maxMonthCoverage} months
         </p>
+        <p className="text-xs text-brand font-medium mt-1">
+          Coverage: {formatCurrency(policy.minCoverageAmount)} - {formatCurrency(policy.maxCoverageAmount)}
+        </p>
         {policy.description && (
           <p className="text-sm text-text-subtle mt-1.5 line-clamp-1 italic">
             "{policy.description}"

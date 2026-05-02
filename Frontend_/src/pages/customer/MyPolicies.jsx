@@ -93,6 +93,9 @@ const PolicyRow = memo(function PolicyRow({ policy }) {
         <p className="text-sm text-text-muted mt-1">
           Holder: {policy.holderName} · Property ID: {policy.propertyIdentifier}
         </p>
+        <p className="text-sm font-semibold text-brand">
+          Coverage: {formatCurrency(policy.coverageAmount)}
+        </p>
         <p className="text-sm text-text-muted">
           {new Date(policy.startDate).toLocaleDateString()} to{" "}
           {new Date(policy.endDate).toLocaleDateString()} · {formatStatusLabel(policy.status)}

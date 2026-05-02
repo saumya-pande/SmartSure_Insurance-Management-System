@@ -9,6 +9,8 @@ services:
       MYSQL_DATABASE: smartsure_auth
     ports:
       - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
     networks:
       - smartsure-network
     healthcheck:
@@ -248,3 +250,4 @@ networks:
 volumes:
   auth-uploads:
   claims-uploads:
+  mysql-data:

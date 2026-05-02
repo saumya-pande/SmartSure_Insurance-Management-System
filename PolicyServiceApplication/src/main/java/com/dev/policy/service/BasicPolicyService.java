@@ -40,6 +40,8 @@ public class BasicPolicyService {
                 .type(request.getType())
                 .basePremium(request.getBasePremium())
                 .maxPremium(request.getMaxPremium())
+                .minCoverageAmount(request.getMinCoverageAmount())
+                .maxCoverageAmount(request.getMaxCoverageAmount())
                 .description(request.getDescription())
                 .maxMonthCoverage(request.getMaxMonthCoverage())
                 .billingCycle(request.getBillingCycle())
@@ -61,6 +63,8 @@ public class BasicPolicyService {
         policy.setType(request.getType());
         policy.setBasePremium(request.getBasePremium());
         policy.setMaxPremium(request.getMaxPremium());
+        policy.setMinCoverageAmount(request.getMinCoverageAmount());
+        policy.setMaxCoverageAmount(request.getMaxCoverageAmount());
         policy.setDescription(request.getDescription());
         policy.setMaxMonthCoverage(request.getMaxMonthCoverage());
         policy.setBillingCycle(request.getBillingCycle());
@@ -125,6 +129,8 @@ public class BasicPolicyService {
                 .type(p.getType())
                 .basePremium(p.getBasePremium())
                 .maxPremium(p.getMaxPremium())
+                .minCoverageAmount(p.getMinCoverageAmount())
+                .maxCoverageAmount(p.getMaxCoverageAmount())
                 .description(p.getDescription())
                 .maxMonthCoverage(p.getMaxMonthCoverage())
                 .billingCycle(p.getBillingCycle())

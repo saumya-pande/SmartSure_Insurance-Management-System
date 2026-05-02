@@ -63,9 +63,24 @@ public class ClaimService {
         if (policy.getStatus() != PurchaseStatus.ACTIVE) {
             throw new InvalidOperationException("Policy is not active");
         }
+ 
+        if (policy.getStartDate() != null && policy.getStartDate().isAfter(LocalDate.now())) {
+            throw new InvalidOperationException("You cannot file a claim for a policy that has not started yet. " +
+                    "Your policy starts on " + policy.getStartDate() + ".");
+        }
+ 
+        if (policy.getEndDate() != null && policy.getEndDate().isBefore(LocalDate.now())) {
+            throw new InvalidOperationException("This policy has expired on " + policy.getEndDate() + 
+                    ". Claims cannot be filed for expired policies.");
+        }
 
         if (claimRepo.existsByCustomerPolicyIdAndStatusNot(request.getCustomerPolicyId(), ClaimStatus.REJECTED)) {
             throw new InvalidOperationException("A claim for this policy has already been submitted and is active.");
+        }
+ 
+        if (request.getClaimAmount() > policy.getCoverageAmount()) {
+            throw new InvalidOperationException("Claim amount (₹" + request.getClaimAmount() + 
+                ") exceeds your policy coverage (₹" + policy.getCoverageAmount() + ").");
         }
 
         // save documents

@@ -116,6 +116,9 @@ export default function AdminPolicies() {
                 <p className="text-sm text-text-muted mt-1">
                   Base premium {formatCurrency(policy.basePremium)} · Max premium {formatCurrency(policy.maxPremium)} · Max {policy.maxMonthCoverage} months
                 </p>
+                <p className="text-xs text-text-subtle mt-1 font-medium">
+                  Coverage: {formatCurrency(policy.minCoverageAmount)} - {formatCurrency(policy.maxCoverageAmount)}
+                </p>
                 <div className="flex gap-2 mt-2">
                   <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-surface-2 border border-border">
                     Billed {policy.billingCycle?.toLowerCase()}
@@ -173,6 +176,8 @@ function PolicyDialog({ initial, onClose, onSaved }) {
       type: initial?.type || "",
       basePremium: initial?.basePremium || "",
       maxPremium: initial?.maxPremium || "",
+      minCoverageAmount: initial?.minCoverageAmount || "",
+      maxCoverageAmount: initial?.maxCoverageAmount || "",
       description: initial?.description || "",
       maxMonthCoverage: initial?.maxMonthCoverage || "",
       billingCycle: initial?.billingCycle || "YEARLY",
@@ -189,6 +194,8 @@ function PolicyDialog({ initial, onClose, onSaved }) {
             type: values.type,
             basePremium: Number(values.basePremium),
             maxPremium: Number(values.maxPremium),
+            minCoverageAmount: Number(values.minCoverageAmount),
+            maxCoverageAmount: Number(values.maxCoverageAmount),
             description: values.description,
             maxMonthCoverage: Number(values.maxMonthCoverage),
             billingCycle: values.billingCycle,
@@ -227,6 +234,10 @@ function PolicyDialog({ initial, onClose, onSaved }) {
           <div className="grid grid-cols-2 gap-3">
             <Field id="basePremium" label="Base premium" type="number" step="0.01" error={errors.basePremium?.message} {...register("basePremium", { required: "Base premium is required" })} />
             <Field id="maxPremium" label="Max premium" type="number" step="0.01" error={errors.maxPremium?.message} {...register("maxPremium", { required: "Max premium is required" })} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field id="minCoverageAmount" label="Min coverage" type="number" step="1" error={errors.minCoverageAmount?.message} {...register("minCoverageAmount", { required: "Min coverage is required" })} />
+            <Field id="maxCoverageAmount" label="Max coverage" type="number" step="1" error={errors.maxCoverageAmount?.message} {...register("maxCoverageAmount", { required: "Max coverage is required" })} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field

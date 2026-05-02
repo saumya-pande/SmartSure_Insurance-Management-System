@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { selectAuth } from "../../store/slices/authSlice";
-import { PolicyService } from "../../lib/services";
+import { PolicyService, KycService } from "../../lib/services";
 import { extractErrorMessage } from "../../lib/api";
 import ErrorAlert from "../../components/ui/ErrorAlert";
 import StatusBadge from "../../components/ui/StatusBadge";
@@ -21,6 +21,7 @@ export default function PolicyDetail() {
   const navigate = useNavigate();
   const [policy, setPolicy] = useState(null);
   const [error, setError] = useState("");
+  const [kycStatus, setKycStatus] = useState(null);
   const [buying, setBuying] = useState(false);
 
   const {
@@ -43,11 +44,15 @@ export default function PolicyDetail() {
     setPolicy(null);
     setError("");
     try {
-      const { data } = await PolicyService.getActive(id);
-      setPolicy(data);
+      const [{ data: policyData }, { data: kycData }] = await Promise.all([
+        PolicyService.getActive(id),
+        KycService.myStatus().catch(() => ({ data: null })),
+      ]);
+      setPolicy(policyData);
+      setKycStatus(kycData?.status);
       reset((current) => ({
         ...current,
-        premiumAmount: data?.basePremium || "",
+        premiumAmount: policyData?.basePremium || "",
       }));
     } catch (err) {
       setError(extractErrorMessage(err, "Could not load policy."));
@@ -119,10 +124,11 @@ export default function PolicyDetail() {
               </div>
             </div>
 
-            <div className="mt-8 grid sm:grid-cols-4 gap-4">
+            <div className="mt-8 grid sm:grid-cols-3 md:grid-cols-5 gap-4">
               <Stat label="Base premium" value={formatCurrency(policy.basePremium || 0)} />
               <Stat label="Max premium" value={formatCurrency(policy.maxPremium || 0)} />
-              <Stat label="Type" value={type || "Policy"} />
+              <Stat label="Min Coverage" value={formatCurrency(policy.minCoverageAmount || 0)} />
+              <Stat label="Max Coverage" value={formatCurrency(policy.maxCoverageAmount || 0)} />
               <Stat label="Max Duration" value={`${policy.maxMonthCoverage} months`} />
             </div>
           </div>
@@ -145,6 +151,16 @@ export default function PolicyDetail() {
                 <p className="text-xs uppercase tracking-widest text-text-subtle">Purchase policy</p>
                 <h2 className="font-heading text-2xl font-semibold mt-1">Enter coverage details</h2>
               </div>
+ 
+              {kycStatus !== "APPROVED" && (
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex gap-3">
+                  <Icon name="info" className="shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">KYC Verification Required</p>
+                    <p className="mt-0.5">Your KYC must be approved by an administrator before you can purchase policies. Current status: <span className="font-bold">{kycStatus || "NOT SUBMITTED"}</span></p>
+                  </div>
+                </div>
+              )}
               <Field
                 id="holderName"
                 label="Holder name"
@@ -198,8 +214,8 @@ export default function PolicyDetail() {
                 error={errors.propertyIdentifier?.message}
                 {...register("propertyIdentifier", { required: "Property identifier is required" })}
               />
-              <Button type="submit" loading={buying} className="w-full">
-                Purchase policy
+              <Button type="submit" loading={buying} className="w-full" disabled={kycStatus !== "APPROVED"}>
+                {kycStatus === "APPROVED" ? "Purchase policy" : "Complete KYC to Purchase"}
               </Button>
             </form>
           </div>

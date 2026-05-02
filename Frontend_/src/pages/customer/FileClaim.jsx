@@ -24,6 +24,8 @@ export default function FileClaim() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -31,15 +33,32 @@ export default function FileClaim() {
       claimAmount: "",
     },
   });
+ 
+  const selectedPolicyId = watch("customerPolicyId");
+  const selectedPolicy = policies.find((p) => String(p.id) === String(selectedPolicyId));
+  const maxCoverage = selectedPolicy?.coverageAmount || 0;
+  
+  const hasNotStarted = selectedPolicy?.startDate && new Date(selectedPolicy.startDate) > new Date();
+  const isExpired = selectedPolicy?.endDate && new Date(selectedPolicy.endDate) < new Date();
+ 
+  useEffect(() => {
+    if (presetPolicy) {
+      setValue("customerPolicyId", presetPolicy);
+    }
+  }, [presetPolicy, setValue]);
 
   const loadPolicies = useCallback(async () => {
     try {
       const { data } = await PolicyService.myPurchases({ page: 0, size: 100 });
-      setPolicies(data?.content || []);
+      const content = data?.content || [];
+      setPolicies(content);
+      if (presetPolicy && content.some(p => String(p.id) === String(presetPolicy))) {
+        setValue("customerPolicyId", presetPolicy);
+      }
     } catch (err) {
       setError(extractErrorMessage(err, "Could not load your policies."));
     }
-  }, []);
+  }, [presetPolicy, setValue]);
 
   useEffect(() => {
     loadPolicies();
@@ -104,6 +123,26 @@ export default function FileClaim() {
 
       <form onSubmit={handleSubmit((values) => submitClaim(values, "draft"))} className="space-y-5" noValidate>
         {error && <ErrorAlert message={error} />}
+ 
+        {hasNotStarted && (
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex gap-3">
+            <Icon name="info" className="shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Policy Not Started</p>
+              <p className="mt-0.5">You cannot file a claim for this policy until it officially starts on <span className="font-bold">{new Date(selectedPolicy.startDate).toLocaleDateString()}</span>.</p>
+            </div>
+          </div>
+        )}
+ 
+        {isExpired && (
+          <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex gap-3">
+            <Icon name="info" className="shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Policy Expired</p>
+              <p className="mt-0.5">This policy expired on <span className="font-bold">{new Date(selectedPolicy.endDate).toLocaleDateString()}</span>. Claims are no longer permitted.</p>
+            </div>
+          </div>
+        )}
 
         <Field
           as="select"
@@ -126,8 +165,14 @@ export default function FileClaim() {
           type="number"
           step="0.01"
           min="0"
+          max={maxCoverage || undefined}
+          placeholder={maxCoverage ? `Max ₹${maxCoverage.toLocaleString()}` : "Enter amount"}
+          hint={maxCoverage ? `Your policy coverage limit is ₹${maxCoverage.toLocaleString()}` : "Select a policy to see coverage limit"}
           error={errors.claimAmount?.message}
-          {...register("claimAmount", { required: "Claim amount is required" })}
+          {...register("claimAmount", { 
+            required: "Claim amount is required",
+            validate: (value) => !maxCoverage || Number(value) <= maxCoverage || `Cannot exceed coverage limit of ₹${maxCoverage.toLocaleString()}`
+          })}
         />
 
         <div>
@@ -155,7 +200,7 @@ export default function FileClaim() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Button type="submit" loading={submitting === "draft"}>
+          <Button type="submit" loading={submitting === "draft"} disabled={hasNotStarted || isExpired}>
             Save draft
           </Button>
           <Button
@@ -163,6 +208,7 @@ export default function FileClaim() {
             variant="outline"
             loading={submitting === "submit"}
             onClick={handleSubmit((values) => submitClaim(values, "submit"))}
+            disabled={hasNotStarted || isExpired}
           >
             Save and submit
           </Button>

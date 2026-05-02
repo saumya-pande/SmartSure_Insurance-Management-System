@@ -92,12 +92,19 @@ public class CustomerPolicyService {
             if (years == 0) years = 1; // minimum 1 year charge if yearly
             totalAmount = request.getPremiumAmount() * years;
         }
+ 
+        Double coverageAmount = basic.getMinCoverageAmount();
+        if (basic.getMaxPremium() != null && basic.getBasePremium() != null && basic.getMaxPremium() > basic.getBasePremium()) {
+            Double ratio = (request.getPremiumAmount() - basic.getBasePremium()) / (basic.getMaxPremium() - basic.getBasePremium());
+            coverageAmount = basic.getMinCoverageAmount() + ratio * (basic.getMaxCoverageAmount() - basic.getMinCoverageAmount());
+        }
 
         CustomerPolicy cp = CustomerPolicy.builder()
                 .customerEmail(email)
                 .holderName(request.getHolderName())
                 .premiumAmount(request.getPremiumAmount())
                 .totalPremium(totalAmount)
+                .coverageAmount(coverageAmount)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .propertyIdentifier(request.getPropertyIdentifier())
@@ -173,6 +180,7 @@ public class CustomerPolicyService {
                 .customerEmail(cp.getCustomerEmail())
                 .premiumAmount(cp.getPremiumAmount())
                 .totalPremium(cp.getTotalPremium())
+                .coverageAmount(cp.getCoverageAmount())
                 .startDate(cp.getStartDate())
                 .endDate(cp.getEndDate())
                 .propertyIdentifier(cp.getPropertyIdentifier())

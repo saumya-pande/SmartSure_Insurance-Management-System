@@ -24,6 +24,14 @@ public class BasicPolicyRequest {
     @NotNull(message = "Max premium is required")
     @Positive(message = "Max premium must be a positive number")
     private Double maxPremium;
+ 
+    @NotNull(message = "Min coverage amount is required")
+    @Positive(message = "Min coverage amount must be a positive number")
+    private Double minCoverageAmount;
+ 
+    @NotNull(message = "Max coverage amount is required")
+    @Positive(message = "Max coverage amount must be a positive number")
+    private Double maxCoverageAmount;
 
     @Size(max = 250, message = "Description must be at most 250 characters")
     private String description;

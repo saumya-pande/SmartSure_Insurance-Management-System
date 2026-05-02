@@ -20,6 +20,9 @@ public class BasicPolicy {
 
     private Double basePremium;
     private Double maxPremium;
+ 
+    private Double minCoverageAmount;
+    private Double maxCoverageAmount;
 
     @Column(length = 250)
     private String description;

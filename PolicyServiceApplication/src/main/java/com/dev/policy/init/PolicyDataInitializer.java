@@ -34,6 +34,8 @@ public class PolicyDataInitializer implements CommandLineRunner {
                 .type(PolicyType.VEHICLE)
                 .basePremium(4500.0)
                 .maxPremium(12000.0)
+                .minCoverageAmount(200000.0)
+                .maxCoverageAmount(800000.0)
                 .maxMonthCoverage(12)
                 .billingCycle(com.dev.policy.entity.BillingCycle.YEARLY)
                 .description("Full coverage for your car including third-party liability and own damage. Includes zero depreciation cover.")
@@ -45,6 +47,8 @@ public class PolicyDataInitializer implements CommandLineRunner {
                 .type(PolicyType.VEHICLE)
                 .basePremium(850.0)
                 .maxPremium(3000.0)
+                .minCoverageAmount(30000.0)
+                .maxCoverageAmount(120000.0)
                 .maxMonthCoverage(36)
                 .billingCycle(com.dev.policy.entity.BillingCycle.YEARLY)
                 .description("Essential protection for bikes and scooters. Covers accidents, theft, and natural calamities. Long-term 3-year plan.")
@@ -56,6 +60,8 @@ public class PolicyDataInitializer implements CommandLineRunner {
                 .type(PolicyType.HOME)
                 .basePremium(1200.0)
                 .maxPremium(4500.0)
+                .minCoverageAmount(500000.0)
+                .maxCoverageAmount(2000000.0)
                 .maxMonthCoverage(60)
                 .billingCycle(com.dev.policy.entity.BillingCycle.YEARLY)
                 .description("Covers the structure of your home against fire, lightning, and earthquake. Ideal for apartment owners.")
@@ -67,6 +73,8 @@ public class PolicyDataInitializer implements CommandLineRunner {
                 .type(PolicyType.HOME)
                 .basePremium(3500.0)
                 .maxPremium(15000.0)
+                .minCoverageAmount(1500000.0)
+                .maxCoverageAmount(5000000.0)
                 .maxMonthCoverage(120)
                 .billingCycle(com.dev.policy.entity.BillingCycle.MONTHLY)
                 .description("Comprehensive protection for both home structure and valuable contents like jewelry and electronics.")
@@ -78,6 +86,8 @@ public class PolicyDataInitializer implements CommandLineRunner {
                 .type(PolicyType.VEHICLE)
                 .basePremium(8000.0)
                 .maxPremium(25000.0)
+                .minCoverageAmount(500000.0)
+                .maxCoverageAmount(1500000.0)
                 .maxMonthCoverage(12)
                 .billingCycle(com.dev.policy.entity.BillingCycle.YEARLY)
                 .description("Tailored coverage for taxis and delivery vans. High liability limits and specialized breakdown assistance.")
@@ -92,10 +102,14 @@ public class PolicyDataInitializer implements CommandLineRunner {
         List<BasicPolicy> existing = repository.findAll();
         boolean updated = false;
         for (BasicPolicy p : existing) {
-            if (p.getDescription() == null || p.getMaxMonthCoverage() == null || p.getBillingCycle() == null) {
+            if (p.getDescription() == null || p.getMaxMonthCoverage() == null || p.getBillingCycle() == null || p.getMinCoverageAmount() == null) {
                 if (p.getDescription() == null) p.setDescription("Standard coverage for " + p.getPolicyName() + ". Includes basic protection against common risks.");
                 if (p.getMaxMonthCoverage() == null) p.setMaxMonthCoverage(12);
                 if (p.getBillingCycle() == null) p.setBillingCycle(com.dev.policy.entity.BillingCycle.YEARLY);
+                if (p.getMinCoverageAmount() == null) {
+                    p.setMinCoverageAmount(p.getBasePremium() * 50); // reduced multiplier
+                    p.setMaxCoverageAmount(p.getMaxPremium() * 100);
+                }
                 repository.save(p);
                 updated = true;
             }

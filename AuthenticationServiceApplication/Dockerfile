@@ -1,7 +1,17 @@
 FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
-COPY . .
-RUN chmod +x mvnw && ./mvnw clean package -DskipTests
+
+# Copy maven executable and pom.xml
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+
+# Download dependencies - this layer will be cached unless pom.xml changes
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+
+# Copy source code and build
+COPY src src
+RUN ./mvnw clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app

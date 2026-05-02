@@ -13,6 +13,8 @@ public class BasicPolicyResponse {
     private PolicyType type;
     private Double basePremium;
     private Double maxPremium;
+    private Double minCoverageAmount;
+    private Double maxCoverageAmount;
     private String description;
     private Integer maxMonthCoverage;
     private com.dev.dashboard.entity.BillingCycle billingCycle;

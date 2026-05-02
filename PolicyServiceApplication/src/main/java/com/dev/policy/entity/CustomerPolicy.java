@@ -19,6 +19,7 @@ public class CustomerPolicy {
 
     private Double premiumAmount; // rate per billing cycle
     private Double totalPremium;   // total contract value
+    private Double coverageAmount;
     private LocalDate startDate;
     private LocalDate endDate;
 
